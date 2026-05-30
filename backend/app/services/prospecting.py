@@ -5,6 +5,7 @@ people + signals + scoring + memory) -> ranked list with suggested openers.
 """
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 from app.core.llm import llm
@@ -19,22 +20,28 @@ class ProspectingService:
     async def search(self, team_id: str, query: str, *, limit: int = 4, owner_id: str | None = None
                      ) -> dict[str, Any]:
         candidates = await self._discover(query, limit)
-        results = []
-        for cand in candidates[:limit]:
+
+        async def research_one(cand: dict[str, Any]) -> dict[str, Any] | None:
             try:
                 res = await account_research_service.research(team_id, cand["name"], owner_id=owner_id)
                 account = res["account"]
                 contacts = res["contacts"]
                 opener = contacts[0].get("suggested_opener") if contacts else None
-                results.append({
+                return {
                     "account": account,
                     "decision_makers": contacts[:3],
                     "signals": res["signals"][:3],
                     "suggested_opener": opener or account.get("recommended_action"),
                     "confidence": account.get("overall_score"),
-                })
+                }
             except Exception as exc:  # pragma: no cover
                 log.error("prospect research failed for %s: %s", cand.get("name"), exc)
+                return None
+
+        # Research all candidates CONCURRENTLY (each is ~60-90s of live web work;
+        # running them in parallel keeps the whole search to roughly one company's time).
+        gathered = await asyncio.gather(*(research_one(c) for c in candidates[:limit]))
+        results = [r for r in gathered if r]
         results.sort(key=lambda r: r["account"].get("overall_score", 0), reverse=True)
         return {"query": query, "count": len(results), "results": results}
 

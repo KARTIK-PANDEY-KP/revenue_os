@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import {
   ArrowRight,
   Telescope,
@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { Reveal } from "@/components/landing/Reveal";
+import { ProductsMenu } from "@/components/landing/ProductsMenu";
 import {
   HeroMockup,
   SearchMockup,
@@ -27,6 +28,7 @@ import {
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 interface Feature {
+  id: string;
   icon: typeof Telescope;
   kicker: string;
   title: string;
@@ -37,6 +39,7 @@ interface Feature {
 
 const FEATURES: Feature[] = [
   {
+    id: "prospecting",
     icon: Telescope,
     kicker: "Prospecting",
     title: "The buyers are already out there",
@@ -46,6 +49,7 @@ const FEATURES: Feature[] = [
     visual: SearchMockup,
   },
   {
+    id: "signals",
     icon: Radio,
     kicker: "Signals",
     title: "Hear the moment they're ready",
@@ -55,6 +59,7 @@ const FEATURES: Feature[] = [
     visual: SignalsMockup,
   },
   {
+    id: "sequences",
     icon: GitBranch,
     kicker: "Outreach",
     title: "Say something only you could say",
@@ -64,6 +69,7 @@ const FEATURES: Feature[] = [
     visual: EmailMockup,
   },
   {
+    id: "copilot",
     icon: PhoneCall,
     kicker: "Call copilot",
     title: "Be fully present on the call",
@@ -73,6 +79,7 @@ const FEATURES: Feature[] = [
     visual: DialerMockup,
   },
   {
+    id: "prioritization",
     icon: Gauge,
     kicker: "Prioritization",
     title: "Know which one matters right now",
@@ -108,8 +115,20 @@ export default function Landing() {
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const mockY = useTransform(scrollYProgress, [0, 1], [0, reduce ? 0 : -60]);
 
+  // Enable smooth anchor scrolling on the document scroll element without
+  // editing globals.css (owned elsewhere). Respect reduced-motion.
+  useEffect(() => {
+    if (reduce) return;
+    const root = document.documentElement;
+    const prev = root.style.scrollBehavior;
+    root.style.scrollBehavior = "smooth";
+    return () => {
+      root.style.scrollBehavior = prev;
+    };
+  }, [reduce]);
+
   return (
-    <div className="relative z-10 min-h-screen overflow-x-hidden">
+    <div className="relative z-10 min-h-screen scroll-smooth overflow-x-hidden">
       {/* ---------------- Nav ---------------- */}
       <header className="sticky top-0 z-40 px-4 pt-3">
         <div className="glass-strong mx-auto flex h-14 max-w-6xl items-center justify-between rounded-full px-5 shadow-sm">
@@ -117,12 +136,7 @@ export default function Landing() {
             Revenue<span className="text-[var(--color-accent)]">OS</span>
           </Link>
           <nav className="hidden items-center gap-7 md:flex">
-            <a href="#product" className="text-sm text-[var(--color-ink-2)] transition-colors hover:text-[var(--color-ink)]">
-              Product
-            </a>
-            <a href="#features" className="text-sm text-[var(--color-ink-2)] transition-colors hover:text-[var(--color-ink)]">
-              Features
-            </a>
+            <ProductsMenu />
             <a href="#how" className="text-sm text-[var(--color-ink-2)] transition-colors hover:text-[var(--color-ink)]">
               How it works
             </a>
@@ -261,7 +275,10 @@ export default function Landing() {
             const Visual = f.visual;
             const flip = i % 2 === 1;
             return (
-              <div key={f.title} className="grid items-center gap-12 lg:grid-cols-2">
+              <div key={f.title} id={f.id} className="relative grid scroll-mt-24 items-center gap-12 lg:grid-cols-2">
+                {f.id === "prioritization" && (
+                  <span id="memory" aria-hidden className="absolute -top-24 left-0 h-0 w-0" />
+                )}
                 <Reveal className={`min-w-0 ${flip ? "lg:order-2" : ""}`} delay={0.05}>
                   <div className="flex items-center gap-2">
                     <span

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Mail, Phone, Linkedin, MessageSquare, CheckSquare, Play } from "lucide-react";
 import { api } from "@/lib/api";
 import { Pill, Reveal, Spinner } from "@/components/ui";
+import { Explain } from "@/components/Explain";
 import { titleCase } from "@/lib/format";
 
 const CHANNEL_ICON: Record<string, any> = {
@@ -44,9 +45,16 @@ export default function SequenceDetail({ params }: { params: Promise<{ id: strin
           <div className="flex items-center gap-2">
             <Pill tone={s.status === "active" ? "positive" : "default"}>{titleCase(s.status)}</Pill>
             {s.status !== "active" && (
-              <button onClick={launch} disabled={launching} className="btn btn-accent">
-                <Play size={14} /> {launching ? "Launching…" : "Launch sequence"}
-              </button>
+              <span className="inline-flex items-center gap-1.5">
+                <button onClick={launch} disabled={launching} className="btn btn-accent">
+                  <Play size={14} /> {launching ? "Launching…" : "Launch sequence"}
+                </button>
+                <Explain
+                  title="Launch sequence"
+                  label="What does Launch sequence do?"
+                  text="Starts the outreach plan — steps run automatically on schedule with the right wait between each touch."
+                />
+              </span>
             )}
           </div>
         </div>

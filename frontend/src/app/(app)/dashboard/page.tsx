@@ -7,6 +7,7 @@ import { ArrowUpRight, Sparkles, Zap, FlaskConical } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/Providers";
 import { Logo, Pill, Reveal, ScoreBadge, Spinner } from "@/components/ui";
+import { Explain } from "@/components/Explain";
 import { cx, scoreTier, signalGlyph, tierColor, timeAgo, titleCase } from "@/lib/format";
 
 const CARDS = [
@@ -91,9 +92,17 @@ export default function DashboardPage() {
                 High-intent accounts, why they matter now, and the single best next action — assembled from live web signals.
               </p>
             </div>
-            <button onClick={runMonitor} disabled={monitoring} className="btn btn-ghost shrink-0 self-start lg:self-auto">
-              <Zap size={14} /> {monitoring ? "Monitoring…" : "Run daily monitor"}
-            </button>
+            <div className="flex items-center gap-2 shrink-0 self-start lg:self-auto">
+              <button onClick={runMonitor} disabled={monitoring} className="btn btn-ghost">
+                <Zap size={14} /> {monitoring ? "Monitoring…" : "Run daily monitor"}
+              </button>
+              <Explain
+                side="bottom"
+                title="Run daily monitor"
+                label="What does Run daily monitor do?"
+                text="Re-checks the companies you're tracking for fresh buying signals (new hires, funding, launches) and re-ranks them."
+              />
+            </div>
           </div>
 
           {/* Research bar — lives inside the hero */}
@@ -111,6 +120,12 @@ export default function DashboardPage() {
             <button className="btn btn-accent shrink-0" disabled={researching}>
               {researching ? <Spinner /> : <><Sparkles size={14} /> Research</>}
             </button>
+            <Explain
+              side="bottom"
+              title="Research"
+              label="What does Research do?"
+              text="Pulls live information about a company from across the web and scores how good a fit they are — usually takes under a minute."
+            />
           </form>
         </section>
       </Reveal>
@@ -157,14 +172,14 @@ export default function DashboardPage() {
               <Link href="/accounts" className="kicker hover:text-[var(--color-accent)]">All accounts →</Link>
             </div>
             <div className="divide-y divide-[var(--color-line)]">
-              <div className="hidden sm:grid grid-cols-[28px_1fr_70px_1.4fr_auto] gap-3 px-5 py-2 kicker">
+              <div className="hidden sm:grid grid-cols-[28px_minmax(0,1fr)_70px_minmax(0,1.4fr)_160px] gap-3 px-5 py-2 kicker">
                 <span>#</span><span>Account</span><span>Score</span><span>Why now</span><span>Action</span>
               </div>
               {board.map((a: any, i: number) => (
                 <Link
                   key={a.id}
                   href={`/accounts/${a.id}`}
-                  className="grid grid-cols-[28px_1fr_70px_1.4fr_auto] gap-3 px-5 py-3.5 items-center hover:bg-[var(--color-paper-2)]/50 transition-colors group"
+                  className="grid grid-cols-[28px_minmax(0,1fr)_70px] sm:grid-cols-[28px_minmax(0,1fr)_70px_minmax(0,1.4fr)_160px] gap-3 px-5 py-3.5 items-center hover:bg-[var(--color-paper-2)]/50 transition-colors group"
                 >
                   <span className="numeral text-lg text-[var(--color-faint)]">{i + 1}</span>
                   <div className="flex items-center gap-3 min-w-0">
@@ -178,18 +193,19 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <ScoreBadge score={a.score} size="sm" />
-                  <div className="min-w-0">
+                  <div className="hidden sm:block min-w-0">
                     {a.signal_type && (
-                      <span className="font-mono text-[10px] mr-1.5" style={{ color: tierColor[scoreTier(a.score)] }}>
+                      <span className="block font-mono text-[10px] truncate" style={{ color: tierColor[scoreTier(a.score)] }}>
                         {signalGlyph(a.signal_type)} {a.signal_type}
                       </span>
                     )}
-                    <span className="text-[0.86rem] text-[var(--color-ink-2)] line-clamp-1">
+                    <span className="block text-[0.86rem] text-[var(--color-ink-2)] line-clamp-2">
                       {a.why_now ?? a.signal ?? "—"}
                     </span>
                   </div>
-                  <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[11px] text-[var(--color-ink-soft)] group-hover:text-[var(--color-accent)]">
-                    {a.recommended_action ?? "Review"} <ArrowUpRight size={12} />
+                  <span className="hidden sm:flex min-w-0 items-center gap-1 font-mono text-[11px] text-[var(--color-ink-soft)] group-hover:text-[var(--color-accent)]">
+                    <span className="truncate">{a.recommended_action ?? "Review"}</span>
+                    <ArrowUpRight size={12} className="shrink-0" />
                   </span>
                 </Link>
               ))}

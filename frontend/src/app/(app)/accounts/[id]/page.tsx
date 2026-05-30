@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 import { api } from "@/lib/api";
 import { Logo, Pill, Reveal, ScoreBar, Spinner } from "@/components/ui";
+import { Explain } from "@/components/Explain";
 import { cx, scoreTier, signalGlyph, tierColor, timeAgo, titleCase } from "@/lib/format";
 
 const TABS = ["Overview", "Signals", "People", "Outreach", "Calls", "Timeline", "Risk"] as const;
@@ -162,13 +163,41 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
                 <p className="font-display text-xl leading-snug mt-1">{a.why_now ?? "Recently added."}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button onClick={askWhyNow} disabled={busy === "why"} className="btn btn-ghost"><Brain size={14} /> Ask memory</button>
-              <button onClick={refresh} disabled={busy === "refresh"} className="btn btn-ghost">
-                <RefreshCw size={14} className={busy === "refresh" ? "animate-spin" : ""} /> Refresh
-              </button>
-              <button onClick={generateSeq} disabled={busy === "seq"} className="btn btn-ghost"><GitBranch size={14} /> Sequence</button>
-              <button onClick={() => router.push(`/dialer?account=${id}`)} className="btn btn-accent"><PhoneCall size={14} /> Call</button>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <span className="inline-flex items-center gap-1.5">
+                <button onClick={askWhyNow} disabled={busy === "why"} className="btn btn-ghost"><Brain size={14} /> Ask memory</button>
+                <Explain
+                  title="Ask memory"
+                  label="What does Ask memory do?"
+                  text="Asks the assistant to explain, in plain English, why this company is worth your attention right now."
+                />
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <button onClick={refresh} disabled={busy === "refresh"} className="btn btn-ghost">
+                  <RefreshCw size={14} className={busy === "refresh" ? "animate-spin" : ""} /> Refresh
+                </button>
+                <Explain
+                  title="Refresh"
+                  label="What does Refresh do?"
+                  text="Fetches the latest web info and signals for this company and updates its score."
+                />
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <button onClick={generateSeq} disabled={busy === "seq"} className="btn btn-ghost"><GitBranch size={14} /> Sequence</button>
+                <Explain
+                  title="Sequence"
+                  label="What does Sequence do?"
+                  text="Auto-writes a multi-step outreach plan (emails, calls, LinkedIn) personalized to this company."
+                />
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <button onClick={() => router.push(`/dialer?account=${id}`)} className="btn btn-accent"><PhoneCall size={14} /> Call</button>
+                <Explain
+                  title="Call"
+                  label="What does Call do?"
+                  text="Opens the live call workspace with talking points and a real-time copilot that suggests what to say."
+                />
+              </span>
             </div>
           </div>
 

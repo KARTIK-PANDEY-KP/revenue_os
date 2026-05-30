@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Logo, Pill, Spinner } from "@/components/ui";
+import { Explain } from "@/components/Explain";
 import { cx, signalGlyph } from "@/lib/format";
 
 function wsUrl(callId: string): string {
@@ -162,9 +163,16 @@ function DialerInner() {
 
               <div className="flex items-center justify-center gap-3 mt-8">
                 {status === "ready" ? (
-                  <button onClick={beginCall} className="btn btn-accent text-base px-6 py-3">
-                    <Phone size={16} /> Start call
-                  </button>
+                  <span className="inline-flex items-center gap-2">
+                    <button onClick={beginCall} className="btn btn-accent text-base px-6 py-3">
+                      <Phone size={16} /> Start call
+                    </button>
+                    <Explain
+                      title="Start call"
+                      label="What does Start call do?"
+                      text="Begins the call — you'll see a live transcript and on-screen suggestions for how to respond."
+                    />
+                  </span>
                 ) : (
                   <>
                     <CtrlBtn active={muted} onClick={() => setMuted((m) => !m)} icon={muted ? MicOff : Mic} label="Mute" />

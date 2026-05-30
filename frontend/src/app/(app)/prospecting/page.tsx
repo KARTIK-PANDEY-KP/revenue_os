@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Telescope, Sparkles } from "lucide-react";
 import { api } from "@/lib/api";
 import { Logo, PageHeader, Pill, Reveal, ScoreBadge, Spinner } from "@/components/ui";
+import { Explain } from "@/components/Explain";
 import { signalGlyph } from "@/lib/format";
 
 const EXAMPLES = [
@@ -53,6 +54,13 @@ export default function ProspectingPage() {
           <button onClick={() => run()} disabled={loading} className="btn btn-accent">
             {loading ? <Spinner /> : <><Sparkles size={14} /> Prospect</>}
           </button>
+          <Explain
+            side="bottom"
+            title="Prospect"
+            label="What does Prospect do?"
+            text="Describe the kind of companies you want; we search the web, research the best matches, and rank them by buying intent."
+            className="mr-3"
+          />
         </div>
       </Reveal>
 
