@@ -3,9 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Zap, Radio, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/components/Providers";
 import { AuthScreen, Field } from "@/components/AuthScreen";
+
+const PERKS = [
+  { icon: Zap, text: "Live in 30 seconds — no setup, no list-buying" },
+  { icon: Radio, text: "Buying signals surfaced the moment they happen" },
+  { icon: ShieldCheck, text: "Free to start · no credit card required" },
+];
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error) {
@@ -52,6 +58,7 @@ export default function SignupPage() {
       eyebrow="Create your workspace"
       title="Start listening in 30 seconds"
       brandLine="Your next customer is already telling the internet they're ready to buy."
+      points={PERKS}
     >
       <form onSubmit={submit} className="space-y-4">
         <Field label="Full name">

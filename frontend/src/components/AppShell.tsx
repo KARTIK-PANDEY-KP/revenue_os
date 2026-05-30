@@ -25,12 +25,21 @@ const NAV = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+  }
 
   return (
-    <div className="relative z-10 min-h-screen lg:grid lg:grid-cols-[244px_1fr]">
-      {/* Sidebar */}
-      <aside className="hidden lg:flex flex-col border-r border-[var(--color-line)] bg-[var(--color-paper-2)]/40 sticky top-0 h-screen">
+    /* Shell is pinned to the viewport; only <main> scrolls, so the sidebar
+       and masthead stay fixed. (Avoids the position:sticky breakage caused by
+       the global overflow-x:hidden on html/body.) */
+    <div className="relative z-10 h-[100dvh] overflow-hidden lg:grid lg:grid-cols-[244px_1fr]">
+      {/* Sidebar — fixed full-height, never scrolls with the page */}
+      <aside className="hidden lg:flex flex-col border-r border-[var(--color-line)] bg-[var(--color-paper-2)]/40 h-[100dvh]">
         <div className="px-6 pt-7 pb-5 border-b border-[var(--color-line)]">
           <Link href="/dashboard" className="block">
             <div className="font-display text-[26px] leading-none tracking-tight">
@@ -84,13 +93,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="font-mono text-[11px] text-[var(--color-ink-soft)] truncate">
             {user?.email ?? "demo@revenueos.app"}
           </div>
+          <button
+            type="button"
+            onClick={handleSignOut}
+            className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-[var(--radius-sm)] text-[0.82rem] text-[var(--color-ink-2)] border border-[var(--color-line)] bg-[var(--color-card)]/50 hover:bg-[rgba(229,67,15,0.08)] hover:text-[var(--color-accent)] hover:border-[var(--color-accent)]/30 transition-colors"
+          >
+            <LogOut size={14} /> Sign out
+          </button>
         </div>
       </aside>
 
-      {/* Main column */}
-      <div className="flex flex-col min-h-screen min-w-0 overflow-x-hidden">
+      {/* Main column — the only scrollable region */}
+      <div className="flex flex-col h-[100dvh] min-w-0 overflow-hidden">
         <Masthead />
-        <main className="flex-1 px-5 sm:px-8 lg:px-10 py-7 min-w-0">{children}</main>
+        <main className="flex-1 overflow-y-auto px-5 sm:px-8 lg:px-10 py-7 min-w-0">{children}</main>
       </div>
     </div>
   );

@@ -146,7 +146,15 @@ export function ProductsMenu() {
         }`}
         style={{ transitionTimingFunction: "var(--ease-fluid)" }}
       >
-        <div className="glass-strong overflow-hidden rounded-[var(--radius-lg)] p-2.5 shadow-xl">
+        <div
+          className="overflow-hidden rounded-[var(--radius-lg)] border border-[var(--glass-border)] p-2.5"
+          style={{
+            background: "rgba(255,253,249,0.98)",
+            backdropFilter: "blur(24px) saturate(180%)",
+            WebkitBackdropFilter: "blur(24px) saturate(180%)",
+            boxShadow: "0 24px 60px rgba(40,35,28,0.22), inset 0 1px 0 rgba(255,255,255,0.9)",
+          }}
+        >
           <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
             {MODULES.map((m) => {
               const Icon = m.icon;

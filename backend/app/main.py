@@ -38,6 +38,9 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
+    # Allow any localhost port (so the SSE EventSource can connect directly,
+    # bypassing the dev proxy which would otherwise buffer the stream).
+    allow_origin_regex=r"https?://localhost:\d+",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
