@@ -20,7 +20,7 @@ export default function SequencesPage() {
       <PageHeader
         kicker="Outbound"
         title="Sequences"
-        sub="AI-generated multi-channel cadences. Trigger.dev runs the steps with real waits between touches."
+        sub="Automated multi-channel cadences — emails, calls, and LinkedIn touches that run on their own, perfectly timed."
         actions={<Link href="/accounts" className="btn btn-ghost"><GitBranch size={14} /> New from account</Link>}
       />
 

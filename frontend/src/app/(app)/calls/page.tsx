@@ -20,7 +20,7 @@ export default function CallsPage() {
       <PageHeader
         kicker="History"
         title="Calls"
-        sub="Every dialer session, transcribed by Speechmatics and summarized by Claude."
+        sub="Every call, transcribed in real time and summarized automatically."
         actions={<Link href="/dialer" className="btn btn-accent"><Phone size={14} /> New call</Link>}
       />
 

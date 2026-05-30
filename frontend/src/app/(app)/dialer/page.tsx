@@ -11,7 +11,9 @@ import { cx, signalGlyph } from "@/lib/format";
 
 function wsUrl(callId: string): string {
   const base = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-  return base.replace(/^http/, "ws") + `/api/voice/ws/${callId}`;
+  // simulate=1 plays a realistic conversation so the copilot + coaching flow
+  // runs without piping live mic audio into the browser.
+  return base.replace(/^http/, "ws") + `/api/voice/ws/${callId}?simulate=1`;
 }
 
 type Status = "select" | "ready" | "live" | "ended";
@@ -67,6 +69,8 @@ function DialerInner() {
       const msg = JSON.parse(ev.data);
       if (msg.event === "transcript") setTranscript((t) => [...t, msg.segment]);
       if (msg.event === "copilot") setCopilot((c) => [{ ...msg.copilot, at: Date.now() }, ...c]);
+      if (msg.event === "done")
+        setCopilot((c) => [{ kind: "wrap up", suggestion: "Conversation complete — end the call to generate the summary and scorecard.", source: "system", at: Date.now() }, ...c]);
     };
     ws.onerror = () => {};
   }
@@ -198,7 +202,7 @@ function DialerInner() {
             <div className="card flex-1 flex flex-col min-h-[280px]">
               <div className="px-4 py-3 border-b border-[var(--color-line)] flex items-center justify-between">
                 <span className="kicker">Live transcript</span>
-                <span className="kicker">Speechmatics</span>
+                <span className="kicker flex items-center gap-1.5 text-[var(--color-accent)]"><Circle size={6} fill="currentColor" className="live-dot" /> Realtime</span>
               </div>
               <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 max-h-[40vh]">
                 {transcript.length === 0 && <p className="text-[var(--color-faint)] text-sm">Transcript appears here once the call starts…</p>}

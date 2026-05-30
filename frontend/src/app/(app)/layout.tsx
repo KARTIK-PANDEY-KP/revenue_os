@@ -7,14 +7,14 @@ import { useAuth } from "@/components/Providers";
 import { Spinner } from "@/components/ui";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, loading, authEnabled } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (authEnabled && !loading && !user) router.replace("/login");
-  }, [authEnabled, loading, user, router]);
+    if (!loading && !user) router.replace("/login");
+  }, [loading, user, router]);
 
-  if (authEnabled && loading) {
+  if (loading || !user) {
     return (
       <div className="relative z-10 min-h-screen grid place-items-center">
         <Spinner label="Loading workspace…" />

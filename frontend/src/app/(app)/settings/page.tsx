@@ -39,12 +39,12 @@ export default function SettingsPage() {
 
   return (
     <div>
-      <PageHeader kicker="Configuration" title="Settings" sub="Sponsor integrations, your ICP, and team configuration." />
+      <PageHeader kicker="Configuration" title="Settings" sub="Connected services, your ICP, and team configuration." />
 
       <Reveal>
         <section className="card mb-7">
           <div className="px-5 py-4 border-b border-[var(--color-line)] flex items-center justify-between">
-            <h2 className="font-display text-2xl">Sponsor stack</h2>
+            <h2 className="font-display text-2xl">Connected services</h2>
             <span className="kicker">{integrations.filter((i) => i.live).length}/{integrations.length} live</span>
           </div>
           <div className="divide-y divide-[var(--color-line)]">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LayoutGrid, Building2, Telescope, Radio, GitBranch, PhoneCall,
@@ -25,7 +25,13 @@ const NAV = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, signOut, authEnabled } = useAuth();
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/");
+  }
 
   return (
     <div className="relative z-10 min-h-screen lg:grid lg:grid-cols-[244px_1fr]">
@@ -33,10 +39,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="hidden lg:flex flex-col border-r border-[var(--color-line)] bg-[var(--color-paper-2)]/40 sticky top-0 h-screen">
         <div className="px-6 pt-7 pb-5 border-b border-[var(--color-line)]">
           <Link href="/dashboard" className="block">
-            <div className="kicker mb-1">GTM Intelligence</div>
             <div className="font-display text-[26px] leading-none tracking-tight">
               Revenue<span className="text-[var(--color-accent)]">OS</span>
             </div>
+            <div className="kicker mt-1">Outbound, on autopilot</div>
           </Link>
         </div>
 
@@ -78,25 +84,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <IntegrationStatus />
-
         <div className="px-5 py-4 border-t border-[var(--color-line)]">
+          <div className="text-sm font-medium truncate">{user?.name ?? "Your workspace"}</div>
           <div className="font-mono text-[11px] text-[var(--color-ink-soft)] truncate">
             {user?.email ?? "demo@revenueos.app"}
           </div>
-          {authEnabled && (
-            <button onClick={signOut} className="kicker mt-1 hover:text-[var(--color-accent)]">
-              Sign out →
-            </button>
-          )}
-          {!authEnabled && <div className="kicker mt-1">Demo session</div>}
+          <button onClick={handleSignOut} className="kicker mt-1.5 hover:text-[var(--color-accent)]">
+            Sign out →
+          </button>
         </div>
       </aside>
 
       {/* Main column */}
-      <div className="flex flex-col min-h-screen">
+      <div className="flex flex-col min-h-screen min-w-0 overflow-x-hidden">
         <Masthead />
-        <main className="flex-1 px-5 sm:px-8 lg:px-10 py-7">{children}</main>
+        <main className="flex-1 px-5 sm:px-8 lg:px-10 py-7 min-w-0">{children}</main>
       </div>
     </div>
   );

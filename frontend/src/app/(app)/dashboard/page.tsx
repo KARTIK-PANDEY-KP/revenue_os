@@ -54,7 +54,7 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHeader
-        kicker="The Almanac · Command Center"
+        kicker="Command center"
         title="What to do today."
         sub="High-intent accounts, why they matter now, and the single best next action — assembled from live web signals."
         actions={

@@ -76,8 +76,13 @@ async def voice_ws(websocket: WebSocket, call_id: str):
         a = (await db.table("accounts").select("*").eq("id", call[0]["account_id"]).limit(1).execute()).data
         account = a[0] if a else None
 
+    # The browser requests a simulated conversation (?simulate=1) when it isn't
+    # streaming live mic audio — so the call workspace always demonstrates the
+    # transcript + copilot flow end-to-end.
+    simulate = websocket.query_params.get("simulate") == "1"
+
     try:
-        if not speechmatics_client.enabled:
+        if simulate or not speechmatics_client.enabled:
             await websocket.send_json({"event": "mode", "mock": True})
             prev_ms = 0
             async for seg in speechmatics_client.mock_transcript():
