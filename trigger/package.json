@@ -1,0 +1,19 @@
+{
+  "name": "revenueos-trigger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "RevenueOS — Trigger.dev v3 workflow project (orchestration engine)",
+  "type": "module",
+  "scripts": {
+    "dev": "trigger.dev@latest dev",
+    "deploy": "trigger.dev@latest deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "^3.3.0"
+  },
+  "devDependencies": {
+    "trigger.dev": "^3.3.0",
+    "typescript": "^5.6.0"
+  }
+}

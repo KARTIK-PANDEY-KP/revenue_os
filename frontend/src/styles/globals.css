@@ -1,0 +1,220 @@
+@import "tailwindcss";
+
+/* ===========================================================================
+   RevenueOS — "The Revenue Almanac"
+   Editorial intelligence terminal: ivory paper, warm ink, vermilion accent,
+   hairline ledger rules, oversized serif numerals.
+   =========================================================================== */
+
+@theme {
+  /* Surfaces */
+  --color-paper: #f5f2ea;
+  --color-paper-2: #efeadd;
+  --color-card: #fffefb;
+  --color-ink: #1a1611;
+  --color-ink-2: #3d362c;
+  --color-ink-soft: #6b6253;
+  --color-faint: #9a907e;
+  --color-line: #e2dccb;
+  --color-line-2: #cfc7b2;
+
+  /* Accent — vermilion */
+  --color-accent: #e5430f;
+  --color-accent-2: #c5360a;
+  --color-accent-soft: #fbe4d9;
+
+  /* Semantic */
+  --color-positive: #1f5d3f;
+  --color-positive-soft: #dcebe1;
+  --color-warn: #b06a00;
+  --color-warn-soft: #f6e9d2;
+  --color-risk: #9e2b25;
+  --color-risk-soft: #f3dcd8;
+
+  /* Tier (score) hues */
+  --color-tier-hot: #e5430f;
+  --color-tier-warm: #b06a00;
+  --color-tier-cool: #6b6253;
+
+  /* Type — wired to next/font CSS variables (fallbacks for safety) */
+  --font-display: var(--font-fraunces), "Times New Roman", serif;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-spline-mono), ui-monospace, "SF Mono", monospace;
+
+  --radius: 4px;
+}
+
+/* ---- Base ---------------------------------------------------------------- */
+* {
+  border-color: var(--color-line);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "cv01";
+  position: relative;
+}
+
+/* Grain + subtle radial wash for paper texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 80% -10%, rgba(229, 67, 15, 0.05), transparent 55%),
+    radial-gradient(90% 70% at -10% 110%, rgba(31, 93, 63, 0.04), transparent 55%);
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-2);
+  border: 3px solid var(--color-paper);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-faint); }
+
+::selection { background: var(--color-ink); color: var(--color-paper); }
+
+/* ---- Type utilities ------------------------------------------------------ */
+.font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--font-mono); }
+
+.kicker {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+  font-weight: 500;
+}
+
+.numeral {
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.02em;
+  line-height: 0.9;
+}
+
+.hairline { border-color: var(--color-line); }
+
+/* ---- Component primitives ------------------------------------------------ */
+@layer components {
+  .card {
+    background: var(--color-card);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+  }
+
+  .card-quiet {
+    background: color-mix(in oklab, var(--color-card) 60%, var(--color-paper));
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--color-ink);
+    transition: all 0.18s ease;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--color-ink);
+    color: var(--color-paper);
+  }
+  .btn-primary:hover { background: var(--color-accent); border-color: var(--color-accent); }
+  .btn-ghost { background: transparent; color: var(--color-ink); border-color: var(--color-line-2); }
+  .btn-ghost:hover { border-color: var(--color-ink); background: var(--color-paper-2); }
+  .btn-accent { background: var(--color-accent); color: #fff; border-color: var(--color-accent); }
+  .btn-accent:hover { background: var(--color-accent-2); border-color: var(--color-accent-2); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid var(--color-line-2);
+    color: var(--color-ink-soft);
+    white-space: nowrap;
+  }
+
+  .input {
+    background: var(--color-card);
+    border: 1px solid var(--color-line-2);
+    border-radius: var(--radius);
+    padding: 0.7rem 0.9rem;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--color-ink);
+    width: 100%;
+    transition: border-color 0.15s ease;
+  }
+  .input:focus { outline: none; border-color: var(--color-ink); }
+  .input::placeholder { color: var(--color-faint); }
+}
+
+/* ---- Motion -------------------------------------------------------------- */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes draw-in { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
+}
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+.reveal { animation: fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.rule-draw { transform-origin: left; animation: draw-in 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.live-dot { animation: pulse-dot 1.4s ease-in-out infinite; }
+
+/* Dark "focus room" scope (used by the dialer) */
+.focus-room {
+  --color-paper: #14110c;
+  --color-paper-2: #1c1812;
+  --color-card: #1b1711;
+  --color-ink: #f3ece0;
+  --color-ink-2: #d8cebd;
+  --color-ink-soft: #9a907e;
+  --color-faint: #6b6253;
+  --color-line: #2c261d;
+  --color-line-2: #3a3327;
+  background: var(--color-paper);
+  color: var(--color-ink);
+}

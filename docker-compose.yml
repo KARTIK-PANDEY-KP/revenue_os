@@ -1,0 +1,40 @@
+# Optional infrastructure for local development.
+# RevenueOS runs fully without any of this (in-memory DB + mock integrations),
+# so use these only when you want self-hosted Cognee or a local Postgres.
+
+services:
+  # Self-hosted Cognee memory server.
+  # Point COGNEE_API_URL=http://localhost:8001 at this and set COGNEE_API_KEY
+  # to any value to enable live memory.
+  cognee:
+    image: cognee/cognee:main
+    ports:
+      - "8001:8000"
+    environment:
+      LLM_PROVIDER: anthropic
+      LLM_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_MODEL: claude-sonnet-4-6
+      EMBEDDING_PROVIDER: fastembed
+      VECTOR_DB_PROVIDER: lancedb
+      GRAPH_DATABASE_PROVIDER: kuzu
+    volumes:
+      - cognee_data:/app/.cognee_system
+    restart: unless-stopped
+
+  # Local Postgres (only if you don't use Supabase cloud).
+  # Apply supabase/migrations/*.sql against it, then set DATABASE_URL.
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: revenueos
+      POSTGRES_PASSWORD: revenueos
+      POSTGRES_DB: revenueos
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  cognee_data:
+  pg_data:
