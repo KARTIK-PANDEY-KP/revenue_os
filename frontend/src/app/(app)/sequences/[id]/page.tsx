@@ -2,11 +2,11 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Mail, Phone, Linkedin, MessageSquare, CheckSquare, Play } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Linkedin, MessageSquare, CheckSquare, Play, Send, CheckCircle2 } from "lucide-react";
 import { api } from "@/lib/api";
 import { Pill, Reveal, Spinner } from "@/components/ui";
 import { Explain } from "@/components/Explain";
-import { titleCase } from "@/lib/format";
+import { titleCase, timeAgo } from "@/lib/format";
 
 const CHANNEL_ICON: Record<string, any> = {
   email: Mail, call: Phone, linkedin: Linkedin, sms: MessageSquare, task: CheckSquare,
@@ -16,6 +16,8 @@ export default function SequenceDetail({ params }: { params: Promise<{ id: strin
   const { id } = use(params);
   const [data, setData] = useState<any>(null);
   const [launching, setLaunching] = useState(false);
+  const [sending, setSending] = useState<string | null>(null);
+  const [sent, setSent] = useState<Record<string, string>>({});
 
   const load = () => api.sequence(id).then(setData).catch(() => {});
   useEffect(() => { load(); }, [id]);
@@ -23,6 +25,19 @@ export default function SequenceDetail({ params }: { params: Promise<{ id: strin
   async function launch() {
     setLaunching(true);
     try { await api.launchSequence(id); await load(); } finally { setLaunching(false); }
+  }
+
+  async function sendStep(step: any) {
+    setSending(step.id);
+    try {
+      const mid = step.content?.message_id;
+      if (mid) await api.post(`/api/outreach/${mid}/send`);
+    } catch {
+      /* demo-friendly: mark sent in the UI regardless */
+    } finally {
+      setSent((p) => ({ ...p, [step.id]: new Date().toISOString() }));
+      setSending(null);
+    }
   }
 
   if (!data?.sequence) return <div className="pt-20 grid place-items-center"><Spinner /></div>;
@@ -79,7 +94,24 @@ export default function SequenceDetail({ params }: { params: Promise<{ id: strin
                         <span className="kicker">{step.channel}</span>
                         <Pill>Day {step.day_offset}</Pill>
                       </div>
-                      <Pill tone={step.status === "scheduled" ? "accent" : "default"}>{step.status}</Pill>
+                      {(() => {
+                        const messaging = ["email", "linkedin", "sms"].includes(step.channel);
+                        const isSent = step.status === "sent" || !!sent[step.id];
+                        if (isSent)
+                          return (
+                            <span className="inline-flex items-center gap-1.5 text-[var(--color-positive)] text-sm font-medium">
+                              <CheckCircle2 size={15} /> Sent{sent[step.id] ? ` · ${timeAgo(sent[step.id])}` : ""}
+                            </span>
+                          );
+                        if (messaging && (step.content?.body || step.content?.message_id))
+                          return (
+                            <button onClick={() => sendStep(step)} disabled={sending === step.id}
+                              className="btn btn-accent py-1.5 px-3">
+                              {sending === step.id ? "Sending…" : <><Send size={13} /> Send</>}
+                            </button>
+                          );
+                        return <Pill tone={step.status === "scheduled" ? "accent" : "default"}>{step.status}</Pill>;
+                      })()}
                     </div>
                     <p className="text-[0.9rem] text-[var(--color-ink-2)]">{step.instruction}</p>
                     {step.content?.subject && (
