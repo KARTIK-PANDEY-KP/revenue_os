@@ -3,36 +3,34 @@
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  Mic, MicOff, PhoneOff, PhoneForwarded, Circle, Phone, Lightbulb, Sparkles,
-  Bot, Lock, Radio,
+  Mic, MicOff, PhoneOff, PhoneForwarded, Circle, Phone, Sparkles,
+  Bot, Lock, Radio, Send, Ear,
 } from "lucide-react";
-import { Room, createLocalAudioTrack, type LocalAudioTrack } from "livekit-client";
+import { Room } from "livekit-client";
 import { api } from "@/lib/api";
 import { Logo, Pill, Spinner } from "@/components/ui";
 import { Explain } from "@/components/Explain";
 import { cx, signalGlyph, formatPhone } from "@/lib/format";
 
-function wsUrl(callId: string): string {
-  const base = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8000";
-  // simulate=1 plays the scripted agent ↔ prospect conversation that drives the
-  // transcript, the agent's spoken voice (TTS), and the live reasoning panel.
-  return base.replace(/^http/, "ws") + `/api/voice/ws/${callId}?simulate=1`;
-}
-
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 type Status = "select" | "ready" | "dialing" | "live" | "ended";
 type LiveMode = "live" | "simulated";
+type Conv = "idle" | "listening" | "thinking" | "speaking";
+type Turn = { speaker: "agent" | "prospect"; text: string };
 
 function DialerInner() {
   const params = useSearchParams();
   const accountId = params.get("account");
+  const contactId = params.get("contact");
+  const autostart = params.get("start") === "1";
+  const startedRef = useRef(false);
 
   const [status, setStatus] = useState<Status>("select");
   const [accounts, setAccounts] = useState<any[]>([]);
   const [session, setSession] = useState<any>(null); // {call, prep, livekit, speechmatics}
-  const [transcript, setTranscript] = useState<any[]>([]);
-  const [copilot, setCopilot] = useState<any[]>([]);
+  const [transcript, setTranscript] = useState<Turn[]>([]);
+  const [convState, setConvState] = useState<Conv>("idle");
   const [muted, setMuted] = useState(false);
   const [recording, setRecording] = useState(true);
   const [notes, setNotes] = useState("");
@@ -40,17 +38,38 @@ function DialerInner() {
   const [result, setResult] = useState<any>(null);
   const [seconds, setSeconds] = useState(0);
   const [liveMode, setLiveMode] = useState<LiveMode>("simulated");
+  const [error, setError] = useState<string | null>(null);
+  const [sttSupported, setSttSupported] = useState(true);
+  const [typed, setTyped] = useState("");
 
-  const wsRef = useRef<WebSocket | null>(null);
   const roomRef = useRef<Room | null>(null);
-  const micRef = useRef<LocalAudioTrack | null>(null);
+  const recRef = useRef<any>(null);
+  const histRef = useRef<Turn[]>([]);
+  const liveRef = useRef(false);
+  const mutedRef = useRef(false);
+  const convRef = useRef<Conv>("idle");
   const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" &&
+      !((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition)) {
+      setSttSupported(false);
+    }
+  }, []);
 
   useEffect(() => {
     if (accountId) startSession(accountId);
     else api.accounts("?sort=overall_score").then((d) => setAccounts(d.accounts ?? []));
     return () => teardown();
   }, [accountId]);
+
+  // Auto-begin the call when launched from a sequence's Call step (?start=1).
+  useEffect(() => {
+    if (autostart && status === "ready" && session && !startedRef.current) {
+      startedRef.current = true;
+      beginCall();
+    }
+  }, [autostart, status, session]);
 
   useEffect(() => {
     if (status !== "live") return;
@@ -62,35 +81,60 @@ function DialerInner() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [transcript]);
 
+  function setConv(s: Conv) {
+    convRef.current = s;
+    setConvState(s);
+  }
+
   function teardown() {
-    wsRef.current?.close();
-    wsRef.current = null;
+    liveRef.current = false;
+    stopListening();
     if (typeof window !== "undefined") window.speechSynthesis?.cancel();
     roomRef.current?.disconnect().catch(() => {});
     roomRef.current = null;
-    micRef.current = null;
   }
 
   async function startSession(id: string) {
-    const s = await api.createCall({ account_id: id });
-    setSession(s);
-    setStatus("ready");
+    setError(null);
+    try {
+      // createCall returns fast (DB-only prep) so the dialer opens immediately.
+      const s = await api.createCall({ account_id: id, contact_id: contactId ?? undefined });
+      setSession(s);
+      setStatus("ready");
+      // Upgrade the opener + objections with the richer LLM prep in the
+      // background — never blocks the call workspace from opening.
+      api.callPrep(id)
+        .then((full) =>
+          setSession((cur: any) =>
+            cur ? { ...cur, prep: { ...cur.prep, ...full } } : cur))
+        .catch(() => {});
+    } catch {
+      setError("Couldn't start the call — the backend may be busy. Try again.");
+    }
   }
 
-  // Voice the AI agent's lines aloud (scripted/simulated agent voice). The user
-  // hears the agent through their speakers; their mic is published to the room.
-  function speakAgent(text: string) {
-    if (typeof window === "undefined" || !window.speechSynthesis) return;
+  // Speak a line aloud (the AI agent's voice) and chain to onEnd when finished.
+  function speak(text: string, onEnd?: () => void) {
+    const synth = typeof window !== "undefined" ? window.speechSynthesis : null;
+    if (!synth) { onEnd?.(); return; }
+    synth.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.03;
+    u.rate = 1.02;
     u.pitch = 1;
-    const v = window.speechSynthesis.getVoices().find((x) => /en[-_]/i.test(x.lang));
+    const v = synth.getVoices().find((x) => /en[-_]/i.test(x.lang));
     if (v) u.voice = v;
-    window.speechSynthesis.speak(u);
+    u.onend = () => onEnd?.();
+    u.onerror = () => onEnd?.();
+    synth.speak(u);
   }
 
-  // Join a genuine LiveKit room (real WebRTC + mic publish). Returns true when a
-  // live room is established; false → run the same flow as a visual simulation.
+  function pushTurn(speaker: "agent" | "prospect", text: string) {
+    histRef.current = [...histRef.current, { speaker, text }];
+    setTranscript((t) => [...t, { speaker, text }]);
+  }
+
+  // Join a genuine LiveKit room (real WebRTC). Returns true when a live room is
+  // established; false → keep the same flow but flagged as a simulated room.
   async function connectRoom(): Promise<boolean> {
     const lk = session?.livekit;
     if (!lk?.token || !lk?.url || lk.mock || String(lk.url).includes("mock")) return false;
@@ -98,13 +142,6 @@ function DialerInner() {
       const room = new Room();
       roomRef.current = room;
       await room.connect(lk.url, lk.token);
-      try {
-        const mic = await createLocalAudioTrack();
-        micRef.current = mic;
-        await room.localParticipant.publishTrack(mic);
-      } catch {
-        // Mic permission denied — still a real room, just nothing published.
-      }
       return true;
     } catch {
       roomRef.current?.disconnect().catch(() => {});
@@ -113,26 +150,86 @@ function DialerInner() {
     }
   }
 
-  function openTranscriptStream() {
-    const ws = new WebSocket(wsUrl(session.call.id));
-    wsRef.current = ws;
-    ws.onmessage = (ev) => {
-      const msg = JSON.parse(ev.data);
-      if (msg.event === "transcript") {
-        setTranscript((t) => [...t, msg.segment]);
-        if (msg.segment?.speaker === "rep") speakAgent(msg.segment.text);
-      }
-      if (msg.event === "copilot") setCopilot((c) => [{ ...msg.copilot, at: Date.now() }, ...c]);
-      if (msg.event === "done")
-        setCopilot((c) => [{ kind: "wrap up", suggestion: "Conversation complete — end the call to generate the summary and scorecard.", source: "system", at: Date.now() }, ...c]);
-    };
-    ws.onerror = () => {};
+  // One AI turn: ask Claude for the agent's next line, speak it, then listen.
+  async function agentTurn(userText: string | null) {
+    setConv("thinking");
+    let reply = "";
+    try {
+      const r = await api.converse({
+        account_id: accountId ?? undefined,
+        contact_id: session?.prep?.contact?.id,
+        history: histRef.current,
+        user_text: userText,
+      });
+      reply = r.reply;
+    } catch {
+      reply = "Sorry, I'm having trouble hearing you — could you repeat that?";
+    }
+    if (!liveRef.current) return; // call ended while we were thinking
+    if (!reply) reply = "Sorry, could you say that again?";
+    pushTurn("agent", reply);
+    setConv("speaking");
+    speak(reply, () => {
+      if (liveRef.current && !mutedRef.current) startListening();
+      else setConv("idle");
+    });
+  }
+
+  function startListening() {
+    if (!liveRef.current || mutedRef.current) return;
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) { setConv("idle"); return; }
+    try {
+      const rec = new SR();
+      recRef.current = rec;
+      rec.lang = "en-US";
+      rec.interimResults = false;
+      rec.maxAlternatives = 1;
+      rec.continuous = false;
+      rec.onresult = (e: any) => {
+        const text = Array.from(e.results).map((r: any) => r[0].transcript).join(" ").trim();
+        if (text) submitUserText(text);
+      };
+      rec.onerror = (e: any) => {
+        if (e?.error === "not-allowed" || e?.error === "service-not-allowed") setSttSupported(false);
+      };
+      rec.onend = () => {
+        // Keep listening for the next utterance unless we've moved on (thinking/
+        // speaking) or the call is muted/over.
+        if (convRef.current === "listening" && liveRef.current && !mutedRef.current && sttSupported) {
+          startListening();
+        }
+      };
+      setConv("listening");
+      rec.start();
+    } catch {
+      setConv("idle");
+    }
+  }
+
+  function stopListening() {
+    const r = recRef.current;
+    recRef.current = null;
+    if (r) {
+      try { r.onend = null; r.onresult = null; r.onerror = null; r.abort?.(); } catch { /* noop */ }
+    }
+  }
+
+  // A prospect (user) turn — from speech recognition or the typed fallback.
+  function submitUserText(text: string) {
+    const t = text.trim();
+    if (!t || !liveRef.current || convRef.current === "thinking") return;
+    stopListening();
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+    pushTurn("prospect", t);
+    setTyped("");
+    agentTurn(t);
   }
 
   async function beginCall() {
     if (!session) return;
     setTranscript([]);
-    setCopilot([]);
+    histRef.current = [];
     setSeconds(0);
     setStatus("dialing");
 
@@ -141,15 +238,22 @@ function DialerInner() {
     setLiveMode(connected ? "live" : "simulated");
     await wait(1700);
 
+    liveRef.current = true;
     setStatus("live");
-    openTranscriptStream();
+    agentTurn(null); // AI agent greets first, then starts listening to you.
   }
 
   function toggleMute() {
     setMuted((m) => {
       const next = !m;
-      const t = micRef.current;
-      if (t) (next ? t.mute() : t.unmute());
+      mutedRef.current = next;
+      if (next) {
+        stopListening();
+        if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+        setConv("idle");
+      } else if (liveRef.current && convRef.current !== "speaking" && convRef.current !== "thinking") {
+        startListening();
+      }
       return next;
     });
   }
@@ -167,14 +271,36 @@ function DialerInner() {
   const account = prep?.account;
   const contact = prep?.contact;
   const phone = formatPhone(contact?.phone);
+  const personaName = contact?.full_name ?? "the prospect";
+  const personaFirst = (contact?.full_name?.split(" ")[0]) ?? "Prospect";
+  const convLabel = convState === "listening" ? "Listening…"
+    : convState === "thinking" ? "Thinking…"
+    : convState === "speaking" ? "Speaking…" : "";
 
   return (
-    <div className="focus-room -mx-5 sm:-mx-8 lg:-mx-10 -my-7 min-h-[calc(100vh-2.25rem)] px-5 sm:px-8 lg:px-10 py-7">
-      {status === "select" && (
+    <div className="min-h-[calc(100vh-2.25rem)]">
+      {/* Deep-linked (?account=…): show progress/error instead of an empty picker. */}
+      {status === "select" && accountId && (
+        <div className="max-w-md mx-auto pt-24 grid place-items-center text-center">
+          {error ? (
+            <div className="card p-6 w-full">
+              <div className="kicker mb-2 text-[var(--color-risk)]">Couldn’t start the call</div>
+              <p className="text-[var(--color-ink-soft)] mb-4 text-sm">{error}</p>
+              <button onClick={() => startSession(accountId)} className="btn btn-accent">Try again</button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-3 text-[var(--color-ink-soft)]">
+              <Spinner /> <span className="kicker">Preparing the call…</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {status === "select" && !accountId && (
         <div className="max-w-2xl">
-          <div className="kicker mb-2">AI voice agent</div>
-          <h1 className="font-display text-4xl mb-2 text-[var(--color-ink)]">Who should the agent call?</h1>
-          <p className="text-[var(--color-ink-soft)] mb-6">Pick an account and the RevenueOS AI agent will place the call, run discovery, and handle objections live.</p>
+          <div className="kicker mb-2">AI voice roleplay</div>
+          <h1 className="font-display text-4xl mb-2 text-[var(--color-ink)]">Who do you want to call?</h1>
+          <p className="text-[var(--color-ink-soft)] mb-6">Pick an account and run the call live — you pitch, and the AI answers in character as the prospect, powered by Claude.</p>
           <div className="space-y-2">
             {accounts.slice(0, 8).map((a) => (
               <button key={a.id} onClick={() => startSession(a.id)}
@@ -214,7 +340,7 @@ function DialerInner() {
             </div>
 
             <div className="card p-5">
-              <div className="kicker mb-2 text-[var(--color-accent)]">Agent opener</div>
+              <div className="kicker mb-2 text-[var(--color-accent)]">Your opener</div>
               <p className="font-display text-lg leading-snug text-[var(--color-ink)]">{prep?.opener}</p>
             </div>
 
@@ -243,9 +369,9 @@ function DialerInner() {
               </div>
               <div className="font-display text-3xl mt-5 text-[var(--color-ink)]">{account?.name}</div>
 
-              {/* Agent identity */}
+              {/* Who's on the line — the AI is role-playing the prospect you called */}
               <div className="inline-flex items-center gap-1.5 mt-2 text-[0.78rem] text-[var(--color-ink-soft)] font-mono">
-                <Bot size={13} className="text-[var(--color-accent)]" /> RevenueOS AI agent
+                <Bot size={13} className="text-[var(--color-accent)]" /> {personaName} · AI
               </div>
 
               <div className="kicker mt-2">
@@ -261,6 +387,14 @@ function DialerInner() {
                   <span>{phone ? <>Ready to dial {phone}</> : "Ready to dial"}</span>
                 )}
               </div>
+
+              {/* Conversation state */}
+              {status === "live" && convLabel && (
+                <div className="kicker mt-1 inline-flex items-center gap-1.5 text-[var(--color-ink-soft)]">
+                  {convState === "listening" && <Ear size={11} className="text-[var(--color-positive)]" />}
+                  {convLabel}
+                </div>
+              )}
 
               {/* Connection mode badge (real LiveKit room vs simulated) */}
               {(status === "live" || status === "dialing") && (
@@ -278,7 +412,7 @@ function DialerInner() {
                 </div>
               )}
 
-              {status === "live" && <Waveform muted={muted} />}
+              {status === "live" && <Waveform active={convState === "listening" || convState === "speaking"} muted={muted} />}
 
               <div className="flex items-center justify-center gap-3 mt-8">
                 {status === "ready" ? (
@@ -289,7 +423,7 @@ function DialerInner() {
                     <Explain
                       title="Start call"
                       label="What does Start call do?"
-                      text="The RevenueOS AI agent places the call, joins a live voice room, and talks to the prospect — you'll see the transcript and the agent's reasoning in real time."
+                      text="You're placing the call. The prospect — played by the AI, in character — picks up. Pitch them by speaking into your mic (or typing) and they respond live, powered by Claude."
                     />
                   </span>
                 ) : status === "dialing" ? (
@@ -326,21 +460,21 @@ function DialerInner() {
             )}
           </div>
 
-          {/* Right — transcript + agent reasoning */}
+          {/* Right — transcript + your-turn controls */}
           <div className="space-y-4 flex flex-col">
             <div className="card flex-1 flex flex-col min-h-[280px]">
               <div className="px-4 py-3 border-b border-[var(--color-line)] flex items-center justify-between">
                 <span className="kicker">Live transcript</span>
                 <span className="kicker flex items-center gap-1.5 text-[var(--color-accent)]"><Circle size={6} fill="currentColor" className="live-dot" /> Realtime</span>
               </div>
-              <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 max-h-[40vh]">
-                {transcript.length === 0 && <p className="text-[var(--color-faint)] text-sm">Transcript appears here once the agent connects…</p>}
+              <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 max-h-[44vh]">
+                {transcript.length === 0 && <p className="text-[var(--color-faint)] text-sm">{personaFirst} picks up when the call connects — then pitch them and they respond live…</p>}
                 {transcript.map((t, i) => {
-                  const isAgent = t.speaker === "rep";
+                  const isAgent = t.speaker === "agent";
                   return (
                     <div key={i} className={cx("text-[0.86rem]", isAgent ? "text-[var(--color-ink)]" : "text-[var(--color-ink-2)]")}>
                       <span className={cx("kicker mr-2", isAgent && "text-[var(--color-accent)]")}>
-                        {isAgent ? "AI agent" : "prospect"}
+                        {isAgent ? personaFirst : "You"}
                       </span>{t.text}
                     </div>
                   );
@@ -350,19 +484,31 @@ function DialerInner() {
 
             <div className="card">
               <div className="px-4 py-3 border-b border-[var(--color-line)] flex items-center gap-2">
-                <Lightbulb size={14} className="text-[var(--color-accent)]" />
-                <span className="kicker text-[var(--color-accent)]">Agent reasoning</span>
+                <Sparkles size={14} className="text-[var(--color-accent)]" />
+                <span className="kicker text-[var(--color-accent)]">Your turn</span>
               </div>
-              <div className="px-4 py-3 space-y-2 max-h-[28vh] overflow-y-auto">
-                {copilot.length === 0 && <p className="text-[var(--color-faint)] text-sm">The agent's reasoning and next moves appear here as the call unfolds…</p>}
-                {copilot.map((c, i) => (
-                  <div key={i} className={cx("p-3 rounded-[var(--radius)] border", i === 0 ? "border-[var(--color-accent)] bg-[var(--color-accent-soft)]/10" : "border-[var(--color-line)]")}>
-                    <div className="kicker mb-1 flex items-center gap-1.5">
-                      <Sparkles size={10} /> {c.kind?.replace(/[:_]/g, " ")}
-                    </div>
-                    <p className="text-[0.86rem] text-[var(--color-ink)]">{c.suggestion}</p>
-                  </div>
-                ))}
+              <div className="px-4 py-3 space-y-2">
+                <p className="text-[0.8rem] text-[var(--color-ink-soft)]">
+                  {convState === "speaking" ? `${personaFirst} is speaking…`
+                    : convState === "thinking" ? `${personaFirst} is thinking…`
+                    : sttSupported
+                      ? `Pitch ${personaFirst} — speak into your mic and they reply. Or type below.`
+                      : "Speech input isn’t available in this browser — type your reply below."}
+                </p>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); submitUserText(typed); }}
+                  className="flex items-center gap-2 rounded-[var(--radius)] border border-[var(--color-line)] px-3 py-2">
+                  <input
+                    value={typed}
+                    onChange={(e) => setTyped(e.target.value)}
+                    disabled={status !== "live"}
+                    placeholder="Type what you’d say…"
+                    className="flex-1 min-w-0 bg-transparent outline-none text-sm placeholder:text-[var(--color-faint)]" />
+                  <button type="submit" disabled={!typed.trim() || status !== "live"}
+                    className="grid place-items-center h-8 w-8 rounded-full bg-[var(--color-accent)] text-white disabled:opacity-40">
+                    <Send size={14} />
+                  </button>
+                </form>
               </div>
             </div>
           </div>
@@ -374,15 +520,16 @@ function DialerInner() {
   );
 }
 
-function Waveform({ muted }: { muted: boolean }) {
+function Waveform({ active, muted }: { active: boolean; muted: boolean }) {
+  const on = active && !muted;
   return (
     <div className="flex items-end justify-center gap-1 h-12 mt-6">
       {Array.from({ length: 28 }).map((_, i) => (
         <span key={i} className="w-[3px] rounded-full bg-[var(--color-accent)]"
           style={{
-            height: muted ? "4px" : `${20 + Math.abs(Math.sin(i * 0.7)) * 70}%`,
-            animation: muted ? "none" : `pulse-dot ${0.7 + (i % 5) * 0.18}s ease-in-out infinite`,
-            opacity: muted ? 0.3 : 1,
+            height: on ? `${20 + Math.abs(Math.sin(i * 0.7)) * 70}%` : "4px",
+            animation: on ? `pulse-dot ${0.7 + (i % 5) * 0.18}s ease-in-out infinite` : "none",
+            opacity: on ? 1 : 0.3,
           }} />
       ))}
     </div>

@@ -110,6 +110,15 @@ export default function SequenceDetail({ params }: { params: Promise<{ id: strin
                               {sending === step.id ? "Sending…" : <><Send size={13} /> Send</>}
                             </button>
                           );
+                        if (step.channel === "call")
+                          return (
+                            <Link
+                              href={`/dialer?account=${s.account_id}${s.contact_id ? `&contact=${s.contact_id}` : ""}&start=1`}
+                              className="btn btn-accent py-1.5 px-3"
+                            >
+                              <Phone size={13} /> Call
+                            </Link>
+                          );
                         return <Pill tone={step.status === "scheduled" ? "accent" : "default"}>{step.status}</Pill>;
                       })()}
                     </div>
