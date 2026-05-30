@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { cx, initials, scoreTier, tierColor } from "@/lib/format";
 
@@ -37,12 +38,16 @@ export function PageHeader({
 }
 
 export function Logo({ src, name, size = 40 }: { src?: string; name: string; size?: number }) {
+  // Many account logo_urls 404 or are blocked; fall back to monogram initials
+  // instead of leaving an empty box (which read as broken "checkboxes").
+  const [failed, setFailed] = useState(false);
+  const showImg = src && !failed;
   return (
     <div
-      className="grid place-items-center rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-paper-2)] overflow-hidden shrink-0"
+      className="grid place-items-center rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-paper-2)] overflow-hidden shrink-0 text-[var(--color-ink-soft)]"
       style={{ width: size, height: size }}
     >
-      {src ? (
+      {showImg ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={src}
@@ -50,10 +55,12 @@ export function Logo({ src, name, size = 40 }: { src?: string; name: string; siz
           width={size}
           height={size}
           className="object-contain w-full h-full"
-          onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
+          onError={() => setFailed(true)}
         />
       ) : (
-        <span className="font-display text-sm">{initials(name)}</span>
+        <span className="font-display" style={{ fontSize: Math.max(11, size * 0.36) }}>
+          {initials(name)}
+        </span>
       )}
     </div>
   );

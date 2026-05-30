@@ -60,7 +60,7 @@ export default function SignupPage() {
       brandLine="Your next customer is already telling the internet they're ready to buy."
       points={PERKS}
     >
-      <form onSubmit={submit} className="space-y-4">
+      <form onSubmit={submit} className="space-y-3.5">
         <Field label="Full name">
           <input className="input" placeholder="Alex Rivera" value={form.name} onChange={set("name")} required autoFocus />
         </Field>
@@ -78,7 +78,7 @@ export default function SignupPage() {
           {busy ? "Creating…" : <>Create workspace <ArrowRight size={15} /></>}
         </button>
       </form>
-      <p className="text-sm text-[var(--color-ink-soft)] mt-6 text-center">
+      <p className="text-sm text-[var(--color-ink-soft)] mt-5 text-center">
         Already have an account?{" "}
         <Link href="/login" className="text-[var(--color-accent)] hover:underline">Sign in</Link>
       </p>

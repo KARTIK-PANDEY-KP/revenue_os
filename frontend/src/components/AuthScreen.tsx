@@ -118,7 +118,7 @@ export function AuthScreen({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative z-10 min-h-screen grid place-items-center p-6 sm:p-10 overflow-hidden">
+    <div className="relative z-10 h-dvh grid place-items-center px-6 py-6 sm:px-10 sm:py-8 overflow-hidden">
       {/* Ambient glows (anchored to the viewport, behind the centered block) */}
       <div
         aria-hidden
@@ -135,7 +135,7 @@ export function AuthScreen({
           instead of letting them stretch to opposite edges on wide screens. */}
       <div className="relative w-full max-w-5xl grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
         {/* Brand panel */}
-        <div className="hidden lg:flex flex-col gap-9">
+        <div className="hidden lg:flex flex-col gap-7">
           <div className="flex items-center gap-3">
             <Link href="/" className="font-display text-3xl tracking-tight">
               Revenue<span className="text-[var(--color-accent)]">OS</span>
@@ -144,8 +144,8 @@ export function AuthScreen({
           </div>
 
           <div>
-            <p className="font-display text-[2.6rem] leading-[1.05] tracking-tight">{brandLine}</p>
-            <p className="mt-5 text-[var(--color-ink-soft)] max-w-md">
+            <p className="font-display text-[2.3rem] leading-[1.05] tracking-tight">{brandLine}</p>
+            <p className="mt-4 text-[var(--color-ink-soft)] max-w-md">
               The system that listens to the buying signals companies are already broadcasting — so your
               team can spend its time closing, not digging.
             </p>
@@ -167,17 +167,17 @@ export function AuthScreen({
 
         {/* Form card */}
         <div
-          className="w-full max-w-md lg:justify-self-end glass-strong rounded-[var(--radius-lg)] p-8 sm:p-10 reveal"
+          className="w-full max-w-md lg:justify-self-end glass-strong rounded-[var(--radius-lg)] p-7 sm:p-8 reveal"
           style={{ boxShadow: "var(--glass-shadow-hover)" }}
         >
-          <div className="lg:hidden font-display text-3xl mb-8">
+          <div className="lg:hidden font-display text-3xl mb-6">
             Revenue<span className="text-[var(--color-accent)]">OS</span>
           </div>
           <div className="kicker mb-2">{eyebrow}</div>
-          <h1 className="font-display text-3xl sm:text-[2.2rem] tracking-tight mb-6 leading-tight">{title}</h1>
+          <h1 className="font-display text-3xl sm:text-[2.2rem] tracking-tight mb-5 leading-tight">{title}</h1>
 
           {points && points.length > 0 && (
-            <ul className="mb-7 space-y-2.5">
+            <ul className="mb-5 space-y-2">
               {points.map((p) => {
                 const Icon = p.icon;
                 return (

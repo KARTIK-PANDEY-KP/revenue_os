@@ -63,6 +63,7 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
   const [busy, setBusy] = useState<string | null>(null);
   const [timeline, setTimeline] = useState<any[]>([]);
   const [whyNow, setWhyNow] = useState<any>(null);
+  const [actionErr, setActionErr] = useState<string | null>(null);
 
   const load = () => api.account(id).then(setData).catch(() => {});
   useEffect(() => { load(); }, [id]);
@@ -71,20 +72,25 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
   }, [tab]);
 
   async function refresh() {
-    setBusy("refresh");
-    try { await api.research(data.account.name); await load(); } finally { setBusy(null); }
+    setBusy("refresh"); setActionErr(null);
+    try { await api.research(data.account.name); await load(); }
+    catch { setActionErr("Couldn't refresh just now — the web research hit a snag. Try again."); }
+    finally { setBusy(null); }
   }
   async function generateSeq() {
-    setBusy("seq");
+    setBusy("seq"); setActionErr(null);
     try {
       const dm = (data.contacts ?? []).find((c: any) => c.is_decision_maker) ?? data.contacts?.[0];
       const res = await api.generateSequence({ account_id: id, contact_id: dm?.id });
       router.push(`/sequences/${res.sequence.id}`);
-    } finally { setBusy(null); }
+    } catch { setActionErr("Couldn't generate the sequence just now. Please try again."); }
+    finally { setBusy(null); }
   }
   async function askWhyNow() {
-    setBusy("why");
-    try { setWhyNow(await api.whyNow(id)); } finally { setBusy(null); }
+    setBusy("why"); setActionErr(null);
+    try { setWhyNow(await api.whyNow(id)); }
+    catch { setActionErr("Memory is unavailable right now. Try again in a moment."); }
+    finally { setBusy(null); }
   }
 
   if (!data) return <div className="pt-20 grid place-items-center"><Spinner label="Loading dossier…" /></div>;
@@ -201,9 +207,13 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
             </div>
           </div>
 
+          {actionErr && (
+            <p className="mt-3 text-sm text-[var(--color-risk)]">{actionErr}</p>
+          )}
+
           {whyNow && (
             <div className="mt-4 card-quiet p-4">
-              <span className="kicker text-[var(--color-accent)]">Cognee memory · why this account</span>
+              <span className="kicker text-[var(--color-accent)]">Memory · why this account</span>
               <p className="mt-2 text-[0.95rem] leading-relaxed">{whyNow.answer}</p>
             </div>
           )}

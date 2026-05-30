@@ -67,8 +67,12 @@ class BrightDataClient:
             # No SERP zone configured — search unavailable; callers degrade.
             return []
         url = f"https://www.google.com/search?q={quote_plus(query)}&num={num}&brd_json=1"
-        raw = await self._request(url, zone=settings.brightdata_serp_zone)
-        return self._parse_serp(raw, num)
+        try:
+            raw = await self._request(url, zone=settings.brightdata_serp_zone)
+            return self._parse_serp(raw, num)
+        except Exception as exc:  # transient SERP failure -> degrade, don't 500
+            log.error("SERP search failed (%s); returning no results.", exc)
+            return []
 
     def _parse_serp(self, raw: str, num: int) -> list[dict[str, Any]]:
         try:
