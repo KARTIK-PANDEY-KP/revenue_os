@@ -6,7 +6,6 @@ import {
   TrendingUp,
   Banknote,
   UserPlus,
-  ShieldCheck,
   Check,
 } from "lucide-react";
 
@@ -162,10 +161,6 @@ export function AuthScreen({
                   <div className="kicker mt-1">{s.label}</div>
                 </div>
               ))}
-            </div>
-            <div className="flex items-center gap-2.5 text-[var(--color-faint)] text-[0.78rem] font-mono">
-              <ShieldCheck size={14} />
-              <span>SOC 2 Type II · Bank-grade encryption · GDPR-ready</span>
             </div>
           </div>
         </div>

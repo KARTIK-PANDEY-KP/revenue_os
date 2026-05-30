@@ -25,8 +25,21 @@ interface ExplainProps {
  */
 export function Explain({ text, title, label, side = "top", className }: ExplainProps) {
   const [open, setOpen] = useState(false);
+  const [align, setAlign] = useState<"center" | "left" | "right">("center");
   const tipId = useId();
   const wrapRef = useRef<HTMLSpanElement | null>(null);
+
+  // On open, keep the popover inside the viewport: right-align near the right
+  // edge, left-align near the left edge, otherwise center on the trigger.
+  useEffect(() => {
+    if (!open || !wrapRef.current) return;
+    const r = wrapRef.current.getBoundingClientRect();
+    const half = 130; // ~half the popover width + margin
+    const center = r.left + r.width / 2;
+    if (center + half > window.innerWidth - 8) setAlign("right");
+    else if (center - half < 8) setAlign("left");
+    else setAlign("center");
+  }, [open]);
 
   // Close on Escape, and on outside tap (touch toggling).
   useEffect(() => {
@@ -85,11 +98,23 @@ export function Explain({ text, title, label, side = "top", className }: Explain
             exit={{ opacity: 0, y: side === "top" ? 4 : -4, scale: 0.98 }}
             transition={{ duration: 0.16, ease: [0.16, 1, 0.3, 1] }}
             className={cx(
-              "glass-strong absolute left-1/2 z-50 w-60 -translate-x-1/2 rounded-[var(--radius-sm)] p-3",
+              "absolute z-50 w-60 max-w-[min(15rem,calc(100vw-1.5rem))] rounded-[var(--radius-sm)] p-3",
               "pointer-events-none text-left whitespace-normal",
-              "shadow-[0_10px_30px_rgba(40,35,28,0.18)]",
               side === "top" ? "bottom-full mb-2" : "top-full mt-2",
+              align === "center" && "left-1/2 -translate-x-1/2",
+              align === "right" && "right-0",
+              align === "left" && "left-0",
             )}
+            style={{
+              // Genuine translucent Liquid Glass: light fill + heavy blur/saturate
+              // so the page refracts through instead of a flat opaque card.
+              background: "rgba(255,255,255,0.42)",
+              WebkitBackdropFilter: "blur(24px) saturate(185%)",
+              backdropFilter: "blur(24px) saturate(185%)",
+              border: "1px solid rgba(255,255,255,0.55)",
+              boxShadow:
+                "0 14px 36px rgba(40,35,28,0.16), inset 0 1px 0 rgba(255,255,255,0.7)",
+            }}
           >
             {title && (
               <span className="kicker mb-1 block text-[var(--color-accent)]">{title}</span>
