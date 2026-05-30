@@ -2,14 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   LayoutGrid, Building2, Telescope, Radio, GitBranch, PhoneCall,
-  History, GraduationCap, Settings as Cog, Circle,
+  History, GraduationCap, Settings as Cog, Circle, LogOut,
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/components/Providers";
-import { cx } from "@/lib/format";
+import { cx, initials } from "@/lib/format";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutGrid, n: "01" },
@@ -25,13 +25,7 @@ const NAV = [
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, signOut } = useAuth();
-
-  async function handleSignOut() {
-    await signOut();
-    router.push("/");
-  }
+  const { user } = useAuth();
 
   return (
     <div className="relative z-10 min-h-screen lg:grid lg:grid-cols-[244px_1fr]">
@@ -85,13 +79,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="px-5 py-4 border-t border-[var(--color-line)]">
-          <div className="text-sm font-medium truncate">{user?.name ?? "Your workspace"}</div>
+          <div className="kicker">Workspace</div>
+          <div className="text-sm font-medium truncate mt-1">{user?.name ?? "Your workspace"}</div>
           <div className="font-mono text-[11px] text-[var(--color-ink-soft)] truncate">
             {user?.email ?? "demo@revenueos.app"}
           </div>
-          <button onClick={handleSignOut} className="kicker mt-1.5 hover:text-[var(--color-accent)]">
-            Sign out →
-          </button>
         </div>
       </aside>
 
@@ -125,8 +117,8 @@ function Masthead() {
   });
 
   return (
-    <div className="border-b border-[var(--color-line)] bg-[var(--color-paper)]/80 backdrop-blur sticky top-0 z-20">
-      <div className="flex items-center h-9 overflow-hidden">
+    <div className="border-b border-[var(--color-line)] bg-[var(--color-paper)]/80 backdrop-blur sticky top-0 z-30">
+      <div className="flex items-center h-11 overflow-hidden">
         <div className="px-4 h-full flex items-center border-r border-[var(--color-line)] shrink-0">
           <span className="kicker">{today}</span>
         </div>
@@ -135,7 +127,7 @@ function Masthead() {
             <Circle size={6} fill="currentColor" className="live-dot" /> Live signals
           </span>
         </div>
-        <div className="relative flex-1 overflow-hidden">
+        <div className="relative flex-1 overflow-hidden min-w-0">
           {ticker.length > 0 && (
             <div className="flex whitespace-nowrap" style={{ animation: "marquee 40s linear infinite" }}>
               {[...ticker, ...ticker].map((t, i) => (
@@ -146,7 +138,94 @@ function Masthead() {
             </div>
           )}
         </div>
+        <div className="pr-3 pl-2 h-full flex items-center border-l border-[var(--color-line)] shrink-0">
+          <UserMenu />
+        </div>
       </div>
+    </div>
+  );
+}
+
+/* Avatar button + glass dropdown with identity + sign out. */
+function UserMenu() {
+  const router = useRouter();
+  const { user, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  const label = user?.name || user?.email || "Account";
+  const monogram = initials(user?.name || user?.email);
+
+  useEffect(() => {
+    if (!open) return;
+    function onClick(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+    }
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onClick);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  async function handleSignOut() {
+    setOpen(false);
+    await signOut();
+    router.push("/");
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={label}
+        title={label}
+        className={cx(
+          "grid place-items-center h-8 w-8 rounded-full border transition-all",
+          "bg-[rgba(255,255,255,0.5)] border-[var(--glass-border)]",
+          "backdrop-blur-[12px] [backdrop-filter:blur(12px)_saturate(160%)]",
+          "shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] hover:scale-[1.05]",
+          open && "ring-2 ring-[var(--color-accent)]/30 border-[var(--color-accent)]/40",
+        )}
+      >
+        <span className="font-display text-[12px] leading-none text-[var(--color-ink)]">{monogram}</span>
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="glass-strong absolute right-0 top-[calc(100%+10px)] w-64 p-2 rounded-[var(--radius)] z-40"
+          style={{ boxShadow: "var(--glass-shadow-hover)" }}
+        >
+          <div className="flex items-center gap-3 px-2.5 py-2.5">
+            <span className="grid place-items-center h-9 w-9 rounded-full bg-[var(--color-accent-soft)] border border-[var(--color-accent)]/30 shrink-0">
+              <span className="font-display text-[13px] leading-none text-[var(--color-accent)]">{monogram}</span>
+            </span>
+            <div className="min-w-0">
+              <div className="text-sm font-medium truncate">{user?.name ?? "Your workspace"}</div>
+              <div className="font-mono text-[10.5px] text-[var(--color-ink-soft)] truncate">
+                {user?.email ?? "demo@revenueos.app"}
+              </div>
+            </div>
+          </div>
+          <div className="my-1.5 h-px bg-[var(--color-line)]" />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={handleSignOut}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[var(--radius-sm)] text-[0.86rem] text-[var(--color-ink-2)] hover:bg-[rgba(229,67,15,0.08)] hover:text-[var(--color-accent)] transition-colors"
+          >
+            <LogOut size={14} /> Sign out
+          </button>
+        </div>
+      )}
     </div>
   );
 }

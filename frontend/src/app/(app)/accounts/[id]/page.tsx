@@ -7,11 +7,52 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
-import { Logo, Pill, Reveal, ScoreBadge, ScoreBar, Spinner } from "@/components/ui";
+import { Logo, Pill, Reveal, ScoreBar, Spinner } from "@/components/ui";
 import { cx, scoreTier, signalGlyph, tierColor, timeAgo, titleCase } from "@/lib/format";
 
 const TABS = ["Overview", "Signals", "People", "Outreach", "Calls", "Timeline", "Risk"] as const;
 type Tab = (typeof TABS)[number];
+
+/* Prominent glass score dial — SVG ring around the numeral. */
+function ScoreRing({ score, tier }: { score?: number | null; tier: "hot" | "warm" | "cool" }) {
+  const value = Math.max(0, Math.min(100, Math.round(score ?? 0)));
+  const size = 112;
+  const stroke = 8;
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const color = tierColor[tier];
+  return (
+    <div
+      className="relative grid place-items-center rounded-full shrink-0"
+      style={{
+        width: size,
+        height: size,
+        background: "rgba(255,255,255,0.45)",
+        backdropFilter: "blur(10px) saturate(150%)",
+        WebkitBackdropFilter: "blur(10px) saturate(150%)",
+        border: "1px solid var(--glass-border)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.7), 0 6px 18px rgba(40,35,28,0.10)",
+      }}
+    >
+      <svg width={size} height={size} className="absolute inset-0 -rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--color-line)" strokeWidth={stroke} />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circ}
+          strokeDashoffset={circ - (value / 100) * circ}
+          style={{ transition: "stroke-dashoffset 0.9s var(--ease-fluid)" }}
+        />
+      </svg>
+      <span className="numeral text-[2.6rem]" style={{ color }}>{value}</span>
+    </div>
+  );
+}
 
 export default function AccountPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -58,13 +99,22 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
 
       {/* Header */}
       <Reveal>
-        <div className="card p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-6 justify-between">
+        <div
+          className="glass-strong relative overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-8 mb-6"
+          style={{ boxShadow: "var(--glass-shadow-hover)" }}
+        >
+          {/* soft accent radial glow */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-28 -right-20 h-80 w-80 rounded-full"
+            style={{ background: `radial-gradient(closest-side, ${tierColor[tier]}26, transparent 70%)` }}
+          />
+          <div className="relative flex flex-col lg:flex-row gap-6 lg:gap-8 justify-between min-w-0">
             <div className="flex gap-5 min-w-0">
-              <Logo src={a.logo_url} name={a.name} size={68} />
+              <Logo src={a.logo_url} name={a.name} size={72} />
               <div className="min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <h1 className="font-display text-4xl tracking-tight leading-none">{a.name}</h1>
+                  <h1 className="font-display text-4xl sm:text-5xl tracking-tight leading-none">{a.name}</h1>
                   <Pill tone={tier === "hot" ? "accent" : "default"}>{titleCase(a.stage)}</Pill>
                 </div>
                 <div className="flex items-center gap-4 mt-3 font-mono text-[11px] text-[var(--color-ink-soft)] flex-wrap">
@@ -84,10 +134,17 @@ export default function AccountPage({ params }: { params: Promise<{ id: string }
             </div>
 
             {/* Score block */}
-            <div className="shrink-0 lg:text-right">
-              <div className="kicker mb-1 lg:text-right">Priority</div>
-              <ScoreBadge score={a.overall_score} size="lg" />
-              <div className="grid grid-cols-2 gap-x-5 gap-y-2.5 mt-4 w-full lg:w-64">
+            <div className="shrink-0 flex flex-col items-start lg:items-end gap-4">
+              <div className="flex items-center gap-4 lg:flex-row-reverse">
+                <ScoreRing score={a.overall_score} tier={tier} />
+                <div className="lg:text-right">
+                  <div className="kicker">Priority</div>
+                  <div className="font-mono text-[11px] uppercase tracking-wider mt-1" style={{ color: tierColor[tier] }}>
+                    {tier}
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-2.5 w-full lg:w-64">
                 <ScoreBar label="Fit" value={a.fit_score} />
                 <ScoreBar label="Intent" value={a.intent_score} accent="var(--color-accent)" />
                 <ScoreBar label="Timing" value={a.timing_score} accent="var(--color-accent)" />

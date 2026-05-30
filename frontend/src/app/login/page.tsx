@@ -5,10 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/components/Providers";
+import { AuthScreen, Field } from "@/components/AuthScreen";
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error) {
-    // Backend errors arrive as "<status> <path> — <body>"; surface the body.
     const m = error.message.match(/—\s*(.+)$/);
     if (m) {
       try {
@@ -45,37 +45,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="relative z-10 min-h-screen grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-between p-12 border-r border-[var(--color-line)] bg-[var(--color-paper-2)]/40">
-        <Link href="/" className="font-display text-3xl tracking-tight">
-          Revenue<span className="text-[var(--color-accent)]">OS</span>
-        </Link>
-        <p className="font-display text-4xl leading-tight max-w-md">
-          Welcome back. Your pipeline’s been busy.
-        </p>
-        <div className="kicker">Who to call · why now · what to say</div>
-      </div>
-
-      <div className="grid place-items-center p-8">
-        <form onSubmit={submit} className="w-full max-w-sm">
-          <div className="lg:hidden font-display text-3xl mb-8">
-            Revenue<span className="text-[var(--color-accent)]">OS</span>
-          </div>
-          <div className="kicker mb-2">Sign in</div>
-          <h1 className="font-display text-3xl mb-7">Enter your workspace</h1>
-          <label className="kicker">Email</label>
-          <input className="input mt-1 mb-3" type="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          <label className="kicker">Password</label>
-          <input className="input mt-1 mb-5" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
-          {err && <div className="text-[var(--color-risk)] text-sm mb-3">{err}</div>}
-          <button className="btn btn-primary w-full justify-center text-base py-3" disabled={busy}>
-            {busy ? "…" : <>Continue <ArrowRight size={15} /></>}
-          </button>
-          <p className="text-sm text-[var(--color-ink-soft)] mt-5 text-center">
-            New here? <Link href="/signup" className="text-[var(--color-accent)] hover:underline">Create a workspace</Link>
-          </p>
-        </form>
-      </div>
-    </div>
+    <AuthScreen
+      eyebrow="Welcome back"
+      title="Sign in to your workspace"
+      brandLine="Your pipeline has been listening while you were away."
+    >
+      <form onSubmit={submit} className="space-y-4">
+        <Field label="Email">
+          <input className="input" type="email" placeholder="you@company.com"
+            value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
+        </Field>
+        <Field label="Password">
+          <input className="input" type="password" placeholder="••••••••"
+            value={password} onChange={(e) => setPassword(e.target.value)} required />
+        </Field>
+        {err && <p className="text-[var(--color-risk)] text-sm">{err}</p>}
+        <button className="btn btn-accent w-full justify-center text-base py-3" disabled={busy}>
+          {busy ? "Signing in…" : <>Continue <ArrowRight size={15} /></>}
+        </button>
+      </form>
+      <p className="text-sm text-[var(--color-ink-soft)] mt-6 text-center">
+        New here?{" "}
+        <Link href="/signup" className="text-[var(--color-accent)] hover:underline">Create a workspace</Link>
+      </p>
+    </AuthScreen>
   );
 }

@@ -39,45 +39,45 @@ const FEATURES: Feature[] = [
   {
     icon: Telescope,
     kicker: "Prospecting",
-    title: "Find who's actually in-market",
+    title: "The buyers are already out there",
     body:
-      "Describe your ideal customer in plain English. RevenueOS searches the live web, researches every match, and ranks them by real intent — not a stale list someone bought two quarters ago.",
+      "Describe who you sell to in plain English. RevenueOS reads the live web the way a great rep would — researching every match and ranking them by real intent. The opportunities aren't hidden. We just stop letting them go ignored.",
     bullets: ["Natural-language ICP search", "Fresh, researched matches", "Ranked by fit + intent"],
     visual: SearchMockup,
   },
   {
     icon: Radio,
     kicker: "Signals",
-    title: "Know exactly why now",
+    title: "Hear the moment they're ready",
     body:
-      "Hiring spikes, new funding, product launches, pricing changes, fresh execs. Real buying triggers, surfaced the moment they happen and tied to the right message — so every touch has a reason.",
-    bullets: ["Live trigger detection", "Confidence-scored signals", "Mapped to the right angle"],
+      "Hiring spikes, fresh funding, new execs, product launches, pricing changes. These are buyers broadcasting that they're in motion. RevenueOS listens around the clock and surfaces each signal the instant it happens — so every touch has a reason.",
+    bullets: ["Always-on signal listening", "Confidence-scored triggers", "Mapped to the right angle"],
     visual: SignalsMockup,
   },
   {
     icon: GitBranch,
     kicker: "Outreach",
-    title: "Outreach that writes itself",
+    title: "Say something only you could say",
     body:
-      "Hyper-personalized emails, LinkedIn notes, and call openers grounded in what actually changed this week. Approve a sequence and let it run on autopilot — every message earns its send.",
+      "Personalized emails, LinkedIn notes, and call openers grounded in what actually changed this week. The research is done for you — so the words you send sound like a human who noticed, not a template that didn't.",
     bullets: ["Grounded in real signals", "Multi-step sequences", "Approve once, run hands-free"],
     visual: EmailMockup,
   },
   {
     icon: PhoneCall,
     kicker: "Call copilot",
-    title: "A copilot on every call",
+    title: "Be fully present on the call",
     body:
-      "Live transcription with real-time battlecards. When a prospect pushes back, the next best move is already on screen — and every objection makes the playbook sharper for the next call.",
+      "Live transcription with real-time battlecards means you stop scrambling for notes and start actually listening. When a prospect pushes back, the next best move is already on screen — so you can focus on the person, not the prep.",
     bullets: ["Real-time transcription", "Objection battlecards", "Captured automatically"],
     visual: DialerMockup,
   },
   {
     icon: Gauge,
     kicker: "Prioritization",
-    title: "One score that compounds",
+    title: "Know which one matters right now",
     body:
-      "Fit, intent, timing and risk roll into a single priority score, so every rep knows exactly which accounts deserve their time today. Every signal, call and reply feeds one memory that keeps getting smarter.",
+      "Fit, intent, timing and risk roll into a single priority score, so you never wonder where to spend the day. Every signal, call and reply feeds one memory that keeps getting smarter — and keeps pointing you at the account that's ready today.",
     bullets: ["Composite priority score", "Daily ranked leaderboard", "Memory that compounds"],
     visual: ScoreMockup,
   },
@@ -86,22 +86,21 @@ const FEATURES: Feature[] = [
 const STEPS = [
   {
     n: "01",
-    title: "Point it at an account",
-    body: "Type a company or describe your ICP. RevenueOS researches the live web in seconds and brings back researched, ranked matches — no list-buying, no scraping setup.",
+    title: "Describe who you sell to",
+    body: "Type a company or describe your ICP. RevenueOS listens to the live web in seconds and brings back researched, ranked matches — no list-buying, no scraping setup.",
   },
   {
     n: "02",
-    title: "See why now",
-    body: "Open any account to find live signals, a priority score, the decision-makers, and a one-line reason to reach out today. The 'why now' is written for you.",
+    title: "We surface why now",
+    body: "Open any account to find the live signals, a priority score, the decision-makers, and a one-line reason to reach out today. You skip the research and keep the insight.",
   },
   {
     n: "03",
-    title: "Act and learn",
-    body: "Generate grounded outreach, run the call with a live copilot, and let every reply and outcome sharpen the next recommendation. The system gets better as you use it.",
+    title: "You do the human part",
+    body: "Reach out with words that land, run the call with a live copilot, and let every reply sharpen the next recommendation. We handle the listening so you can handle the connecting.",
   },
 ];
 
-const TRUST = ["Northwind", "Cobalt", "Atlas", "Meridian", "Lumen", "Vertex"];
 
 export default function Landing() {
   const reduce = useReducedMotion();
@@ -150,17 +149,17 @@ export default function Landing() {
           >
             <div className="pill mb-6">
               <Sparkles size={12} className="text-[var(--color-accent)]" />
-              The AI-native GTM workspace
+              GTM intelligence that listens
             </div>
-            <h1 className="font-display text-[3rem] leading-[0.94] tracking-tight sm:text-[4.4rem]">
-              Know who to call,
-              <br />
-              and <span className="text-[var(--color-accent)]">exactly why</span> — today.
+            <h1 className="font-display text-[2.7rem] leading-[0.96] tracking-tight sm:text-[4rem]">
+              Your next customer is{" "}
+              <span className="text-[var(--color-accent)]">already telling</span> the internet
+              they&rsquo;re ready to buy.
             </h1>
             <p className="mt-7 max-w-xl text-lg leading-relaxed text-[var(--color-ink-2)] sm:text-xl">
-              RevenueOS finds high-intent accounts, explains why they matter right now, writes the
-              outreach, runs the call with a live copilot, and learns from every interaction. One brain
-              for your entire outbound motion.
+              Most sales teams never hear it. RevenueOS is the system that listens — catching the
+              buying signals companies are already broadcasting, so your reps spend their time
+              closing instead of digging.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link href="/signup" className="btn btn-accent px-6 py-3 text-base">
@@ -171,7 +170,7 @@ export default function Landing() {
               </Link>
             </div>
             <div className="mt-9 flex flex-wrap items-center gap-x-6 gap-y-2">
-              {["Live web intelligence", "Knowledge-graph memory", "Real-time call copilot"].map((t) => (
+              {["Always-on signal listening", "Knowledge-graph memory", "Real-time call copilot"].map((t) => (
                 <span key={t} className="flex items-center gap-1.5 text-sm text-[var(--color-ink-soft)]">
                   <CheckCircle2 size={14} className="text-[var(--color-positive)]" />
                   {t}
@@ -196,30 +195,54 @@ export default function Landing() {
       <section className="border-y border-[var(--color-line)] bg-[var(--color-paper-2)]/50">
         <div className="mx-auto max-w-6xl px-6 py-8">
           <Reveal>
-            <p className="kicker mb-5 text-center">Trusted by modern revenue teams</p>
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 opacity-60">
-              {TRUST.map((c) => (
-                <span key={c} className="font-display text-xl tracking-tight text-[var(--color-ink-soft)]">
-                  {c}
-                </span>
+            <p className="kicker mb-5 text-center">Built for modern revenue teams</p>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <span
+                  key={i}
+                  className="h-7 w-28 rounded-full bg-[rgba(255,255,255,0.4)] border border-[var(--glass-border)] backdrop-blur-[8px] [backdrop-filter:blur(8px)_saturate(140%)]"
+                />
               ))}
             </div>
+            <p className="kicker text-center mt-4 text-[var(--color-faint)]">Customer logos — coming soon</p>
           </Reveal>
         </div>
       </section>
 
-      {/* ---------------- The question band ---------------- */}
-      <section className="mx-auto max-w-6xl px-6 py-20">
-        <Reveal>
-          <div className="kicker mb-3">Why RevenueOS</div>
-          <p className="font-display text-2xl leading-snug sm:text-4xl">
-            “Who should I contact today? Why now? What should I say? What happened on the call? What
-            next?”{" "}
-            <span className="text-[var(--color-ink-soft)]">
-              RevenueOS answers all of them — from one screen.
-            </span>
-          </p>
-        </Reveal>
+      {/* ---------------- Manifesto / vision band ---------------- */}
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-[28rem] w-[44rem] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+          style={{
+            background:
+              "radial-gradient(circle, rgba(229,67,15,0.10), rgba(229,67,15,0.02) 60%, transparent 74%)",
+          }}
+        />
+        <div className="relative mx-auto max-w-4xl px-6 py-28 text-center sm:py-36">
+          <Reveal>
+            <div className="kicker mb-7">Our belief</div>
+            <p className="font-display text-[2rem] leading-[1.12] tracking-tight sm:text-[3.2rem]">
+              Companies don&rsquo;t have a lead problem.
+              <br className="hidden sm:block" />{" "}
+              They have an{" "}
+              <span className="text-[var(--color-accent)]">attention</span> problem.
+            </p>
+          </Reveal>
+          <Reveal delay={0.12}>
+            <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-[var(--color-ink-2)] sm:text-xl">
+              The signals are already out there, broadcast on the open web every day. The best
+              opportunities aren&rsquo;t hidden — they&rsquo;re ignored. RevenueOS does the
+              listening so your people can do what software never will:{" "}
+              <span className="text-[var(--color-ink)]">build the relationship and close the deal.</span>
+            </p>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p className="mx-auto mt-7 font-display text-xl italic leading-snug text-[var(--color-ink-soft)] sm:text-2xl">
+              We give salespeople their time and attention back, so selling can be human again.
+            </p>
+          </Reveal>
+        </div>
       </section>
 
       {/* ---------------- Features (alternating) ---------------- */}
@@ -227,7 +250,8 @@ export default function Landing() {
         <Reveal className="mb-16">
           <div className="kicker mb-3">What it does</div>
           <h2 className="font-display text-4xl tracking-tight sm:text-5xl">
-            An unfair advantage, end to end.
+            Sales teams don&rsquo;t need more leads.
+            <br className="hidden sm:block" /> They need to know which one matters right now.
           </h2>
         </Reveal>
 
@@ -279,11 +303,11 @@ export default function Landing() {
           <Reveal className="mb-14">
             <div className="kicker mb-3">How it works</div>
             <h2 className="font-display text-4xl tracking-tight sm:text-5xl">
-              From cold list to booked meeting.
+              We do the listening. You do the connecting.
             </h2>
             <p className="mt-4 max-w-2xl text-lg leading-relaxed text-[var(--color-ink-2)]">
-              Three steps from a blank cursor to a meeting on the calendar. No data setup, no spreadsheets —
-              just research, reasons, and action in one place.
+              Three steps from a blank cursor to a real conversation. No data setup, no spreadsheets,
+              no hours lost to research — just the signals that matter and the time to act on them.
             </p>
           </Reveal>
 
@@ -326,12 +350,12 @@ export default function Landing() {
               }}
             />
             <h2 className="font-display text-4xl leading-tight tracking-tight sm:text-6xl">
-              Stop guessing.
-              <br className="sm:hidden" /> Start closing.
+              Stop searching.
+              <br className="sm:hidden" /> Start connecting.
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-lg leading-relaxed text-[var(--color-ink-2)]">
-              Your pipeline is hiding in plain sight on the open web. RevenueOS surfaces it every morning,
-              with a reason to reach out and the words to do it.
+              Your next customer is already telling the internet they&rsquo;re ready. RevenueOS surfaces
+              them every morning, with a reason to reach out — so your team can spend the day being human.
             </p>
             <div className="mt-9 flex flex-wrap justify-center gap-3">
               <Link href="/signup" className="btn btn-accent px-7 py-3 text-base">

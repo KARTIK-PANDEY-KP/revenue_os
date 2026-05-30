@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, Zap, Phone, FlaskConical } from "lucide-react";
+import { ArrowUpRight, Sparkles, Zap, FlaskConical } from "lucide-react";
 import { api } from "@/lib/api";
-import { Logo, PageHeader, Pill, Reveal, ScoreBadge, Spinner } from "@/components/ui";
+import { useAuth } from "@/components/Providers";
+import { Logo, Pill, Reveal, ScoreBadge, Spinner } from "@/components/ui";
 import { cx, scoreTier, signalGlyph, tierColor, timeAgo, titleCase } from "@/lib/format";
 
 const CARDS = [
-  { key: "hot_accounts", label: "Hot Accounts", sub: "score ≥ 80" },
+  { key: "hot_accounts", label: "Hot Accounts", sub: "score ≥ 80", hot: true },
   { key: "new_signals_24h", label: "New Signals", sub: "last 24h" },
   { key: "outreach_ready", label: "Outreach Ready", sub: "drafts" },
   { key: "calls_scheduled", label: "Calls Today", sub: "scheduled" },
@@ -17,12 +18,27 @@ const CARDS = [
   { key: "accounts_with_risk", label: "Risk Flags", sub: "accounts" },
 ];
 
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 5) return "Still up";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
 export default function DashboardPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [data, setData] = useState<any>(null);
   const [researching, setResearching] = useState(false);
   const [query, setQuery] = useState("");
   const [monitoring, setMonitoring] = useState(false);
+  const [hello, setHello] = useState("Welcome back");
+
+  useEffect(() => {
+    const first = (user?.name || "").trim().split(" ")[0];
+    setHello(first ? `${greeting()}, ${first}` : greeting());
+  }, [user]);
 
   const load = () => api.dashboard().then(setData).catch(() => {});
   useEffect(() => { load(); }, []);
@@ -53,41 +69,80 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <PageHeader
-        kicker="Command center"
-        title="What to do today."
-        sub="High-intent accounts, why they matter now, and the single best next action — assembled from live web signals."
-        actions={
-          <button onClick={runMonitor} disabled={monitoring} className="btn btn-ghost">
-            <Zap size={14} /> {monitoring ? "Monitoring…" : "Run daily monitor"}
-          </button>
-        }
-      />
-
-      {/* Research bar */}
+      {/* Hero glass panel */}
       <Reveal>
-        <form onSubmit={research} className="card flex items-center gap-3 px-4 py-3 mb-7">
-          <FlaskConical size={18} className="text-[var(--color-accent)] shrink-0" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Research any company by name — e.g. Cursor, Stripe, Ramp…"
-            className="flex-1 bg-transparent outline-none text-[0.98rem] placeholder:text-[var(--color-faint)]"
+        <section
+          className="glass-strong relative overflow-hidden rounded-[var(--radius-lg)] p-6 sm:p-8 mb-7"
+          style={{ boxShadow: "var(--glass-shadow-hover)" }}
+        >
+          {/* soft accent radial glow */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-24 -right-16 h-72 w-72 rounded-full"
+            style={{ background: "radial-gradient(closest-side, rgba(229,67,15,0.18), transparent 70%)" }}
           />
-          <button className="btn btn-accent" disabled={researching}>
-            {researching ? <Spinner /> : <><Sparkles size={14} /> Research</>}
-          </button>
-        </form>
+          <div className="relative flex flex-col lg:flex-row lg:items-end justify-between gap-5 min-w-0">
+            <div className="min-w-0">
+              <div className="kicker mb-2">Command center</div>
+              <h1 className="font-display text-[2.6rem] sm:text-[3.1rem] leading-[0.95] tracking-tight">
+                {hello}.
+              </h1>
+              <p className="text-[var(--color-ink-soft)] mt-2 max-w-xl text-[0.95rem]">
+                High-intent accounts, why they matter now, and the single best next action — assembled from live web signals.
+              </p>
+            </div>
+            <button onClick={runMonitor} disabled={monitoring} className="btn btn-ghost shrink-0 self-start lg:self-auto">
+              <Zap size={14} /> {monitoring ? "Monitoring…" : "Run daily monitor"}
+            </button>
+          </div>
+
+          {/* Research bar — lives inside the hero */}
+          <form
+            onSubmit={research}
+            className="relative mt-6 flex items-center gap-3 px-4 py-3 rounded-[var(--radius)] bg-[rgba(255,255,255,0.5)] border border-[var(--glass-border)] shadow-[inset_0_1px_3px_rgba(40,35,28,0.06)] backdrop-blur-[10px] [backdrop-filter:blur(10px)_saturate(150%)]"
+          >
+            <FlaskConical size={18} className="text-[var(--color-accent)] shrink-0" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Research any company by name — e.g. Cursor, Stripe, Ramp…"
+              className="flex-1 min-w-0 bg-transparent outline-none text-[0.98rem] placeholder:text-[var(--color-faint)]"
+            />
+            <button className="btn btn-accent shrink-0" disabled={researching}>
+              {researching ? <Spinner /> : <><Sparkles size={14} /> Research</>}
+            </button>
+          </form>
+        </section>
       </Reveal>
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 mb-8">
         {CARDS.map((c, i) => (
           <Reveal key={c.key} delay={0.04 * i}>
-            <div className="card px-4 py-4 h-full">
-              <div className="kicker">{c.label}</div>
-              <div className="numeral text-5xl mt-3 mb-1">{cards[c.key] ?? 0}</div>
-              <div className="font-mono text-[10px] text-[var(--color-faint)]">{c.sub}</div>
+            <div
+              className={cx(
+                "card relative overflow-hidden px-4 py-5 h-full transition-shadow",
+                c.hot && "ring-1 ring-[var(--color-accent)]/25",
+              )}
+              style={c.hot ? { boxShadow: "var(--glass-shadow-hover)" } : undefined}
+            >
+              {c.hot && (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0"
+                  style={{ background: "linear-gradient(150deg, rgba(229,67,15,0.10), transparent 55%)" }}
+                />
+              )}
+              <div className="relative">
+                <div className="kicker">{c.label}</div>
+                <div
+                  className="numeral text-[3.4rem] mt-3 mb-1"
+                  style={c.hot ? { color: "var(--color-accent)" } : undefined}
+                >
+                  {cards[c.key] ?? 0}
+                </div>
+                <div className="font-mono text-[10px] text-[var(--color-faint)]">{c.sub}</div>
+              </div>
             </div>
           </Reveal>
         ))}
