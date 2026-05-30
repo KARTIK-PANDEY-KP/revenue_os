@@ -5,7 +5,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/components/Providers";
-import { authEnabled, supabase } from "@/lib/supabase";
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    // Backend errors arrive as "<status> <path> — <body>"; surface the body.
+    const m = error.message.match(/—\s*(.+)$/);
+    if (m) {
+      try {
+        const parsed = JSON.parse(m[1]);
+        if (parsed?.detail) return String(parsed.detail);
+      } catch {
+        return m[1];
+      }
+    }
+    return error.message;
+  }
+  return "Something went wrong. Please try again.";
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -19,13 +35,13 @@ export default function LoginPage() {
     e.preventDefault();
     setBusy(true);
     setErr(null);
-    if (authEnabled) {
-      const c = supabase();
-      const { error } = await c!.auth.signInWithPassword({ email, password });
-      if (error) { setErr(error.message); setBusy(false); return; }
+    try {
+      await signIn({ email, password });
+      router.replace("/dashboard");
+    } catch (error: unknown) {
+      setErr(errorMessage(error));
+      setBusy(false);
     }
-    signIn(email);
-    router.replace("/dashboard");
   }
 
   return (

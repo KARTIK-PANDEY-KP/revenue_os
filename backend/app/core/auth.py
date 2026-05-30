@@ -26,16 +26,10 @@ class AuthContext:
     email: str
     team_id: str
     is_demo: bool = False
-
-
-def _decode_unverified(token: str) -> dict:
-    """Best-effort JWT payload decode (claims only)."""
-    try:
-        from jose import jwt
-
-        return jwt.get_unverified_claims(token)
-    except Exception:
-        return {}
+    # Display-only identity from the app-auth token (login gate). NOT used for
+    # any data ownership — user_id/team_id always stay on the demo tenant since
+    # account.owner_id etc. FK to profiles/auth.users, which app_users is not.
+    display_name: str = ""
 
 
 async def get_auth_context(
@@ -46,11 +40,19 @@ async def get_auth_context(
 
     if authorization and authorization.lower().startswith("bearer "):
         token = authorization.split(" ", 1)[1].strip()
-        claims = _decode_unverified(token)
-        user_id = claims.get("sub")
-        email = claims.get("email", "")
-        if user_id:
-            return AuthContext(user_id=user_id, email=email, team_id=team_id)
+        # Verify our own HS256 session token (the app login gate). Data ops still
+        # run as the demo user/team; the token only carries display identity.
+        from app.services import auth_service
+
+        claims = auth_service.decode_token(token)
+        if claims:
+            return AuthContext(
+                user_id=DEMO_USER_ID,
+                email=claims.get("email") or DEMO_EMAIL,
+                team_id=team_id,
+                is_demo=True,
+                display_name=claims.get("name", ""),
+            )
 
     # Demo fallback — never blocks the product.
     return AuthContext(user_id=DEMO_USER_ID, email=DEMO_EMAIL, team_id=team_id, is_demo=True)

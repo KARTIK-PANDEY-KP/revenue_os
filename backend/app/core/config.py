@@ -91,6 +91,14 @@ class Settings(BaseSettings):
     supabase_project_ref: str = ""
     database_url: str = ""
 
+    # ---- App auth (email/password login gate) ----
+    # HS256 signing secret for our own session JWTs. A constant default keeps the
+    # app working unset; override via JWT_SECRET in .env for real deployments.
+    auth_jwt_secret: str = Field(
+        default="revenueos-dev-insecure-jwt-secret-change-me",
+        alias="JWT_SECRET",
+    )
+
     # Fixed demo team id (matches supabase/seed/demo_seed.sql)
     demo_team_id: str = "00000000-0000-0000-0000-0000000000aa"
 

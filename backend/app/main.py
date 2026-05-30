@@ -63,6 +63,7 @@ async def health() -> dict:
 # ---- Routers ---------------------------------------------------------------
 from app.api.routes import (  # noqa: E402
     accounts,
+    auth,
     calls,
     coaching,
     dashboard,
@@ -75,6 +76,7 @@ from app.api.routes import (  # noqa: E402
     workflows,
 )
 
+app.include_router(auth.router)
 app.include_router(dashboard.router)
 app.include_router(accounts.router)
 app.include_router(signals.router)

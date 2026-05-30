@@ -9,6 +9,26 @@
 import { getAccessToken } from "./supabase";
 
 const DEMO_TEAM = "00000000-0000-0000-0000-0000000000aa";
+const TOKEN_KEY = "revenueos.token";
+
+export function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredToken(token: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    else localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    /* ignore storage failures (private mode, etc.) */
+  }
+}
 
 function base(): string {
   if (typeof window !== "undefined") return "/backend";
@@ -19,7 +39,9 @@ async function request<T = any>(
   path: string,
   opts: { method?: string; body?: unknown } = {},
 ): Promise<T> {
-  const token = typeof window !== "undefined" ? await getAccessToken() : null;
+  // Prefer our app-auth token; fall back to a Supabase session token if present.
+  const token =
+    getStoredToken() ?? (typeof window !== "undefined" ? await getAccessToken() : null);
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "X-Team-Id": DEMO_TEAM,
@@ -39,11 +61,38 @@ async function request<T = any>(
   return (await res.json()) as T;
 }
 
+export interface AuthUser {
+  email: string;
+  name: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: AuthUser;
+}
+
+export interface SignupBody {
+  email: string;
+  password: string;
+  name?: string;
+  company?: string;
+}
+
+export interface LoginBody {
+  email: string;
+  password: string;
+}
+
 export const api = {
   get: <T = any>(p: string) => request<T>(p),
   post: <T = any>(p: string, body?: unknown) => request<T>(p, { method: "POST", body }),
   patch: <T = any>(p: string, body?: unknown) => request<T>(p, { method: "PATCH", body }),
   put: <T = any>(p: string, body?: unknown) => request<T>(p, { method: "PUT", body }),
+
+  // auth --------------------------------------------------------------------
+  authSignup: (body: SignupBody) => request<AuthResponse>("/api/auth/signup", { method: "POST", body }),
+  authLogin: (body: LoginBody) => request<AuthResponse>("/api/auth/login", { method: "POST", body }),
+  authMe: () => request<{ user: AuthUser }>("/api/auth/me"),
 
   // typed endpoints ---------------------------------------------------------
   dashboard: () => request("/api/dashboard"),

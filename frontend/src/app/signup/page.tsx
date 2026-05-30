@@ -5,11 +5,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { useAuth } from "@/components/Providers";
-import { authEnabled, supabase } from "@/lib/supabase";
+
+function errorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    // Backend errors arrive as "<status> <path> — <body>"; surface the body.
+    const m = error.message.match(/—\s*(.+)$/);
+    if (m) {
+      try {
+        const parsed = JSON.parse(m[1]);
+        if (parsed?.detail) return String(parsed.detail);
+      } catch {
+        return m[1];
+      }
+    }
+    return error.message;
+  }
+  return "Something went wrong. Please try again.";
+}
 
 export default function SignupPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
+  const { signUp } = useAuth();
   const [form, setForm] = useState({ name: "", email: "", company: "", password: "" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -22,16 +38,18 @@ export default function SignupPage() {
     e.preventDefault();
     setBusy(true);
     setErr(null);
-    if (authEnabled) {
-      const c = supabase();
-      const { error } = await c!.auth.signUp({
-        email: form.email, password: form.password,
-        options: { data: { full_name: form.name } },
+    try {
+      await signUp({
+        email: form.email,
+        password: form.password,
+        name: form.name,
+        company: form.company,
       });
-      if (error) { setErr(error.message); setBusy(false); return; }
+      router.replace("/dashboard");
+    } catch (error: unknown) {
+      setErr(errorMessage(error));
+      setBusy(false);
     }
-    signIn(form.email, form.name);
-    router.replace("/dashboard");
   }
 
   return (
