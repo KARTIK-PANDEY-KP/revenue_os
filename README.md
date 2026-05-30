@@ -262,14 +262,11 @@ The single account `BRIGHTDATA_API_TOKEN` works across both zones. If you only c
 
 **Cognee — native (local) mode** is the default here: set `COGNEE_NATIVE=true` and the Cognee `LLM_*` / `EMBEDDING_*` vars (Anthropic + fastembed). First run downloads a small embedding model. Data persists locally under `~/.cognee`. Install the extra: `uv pip install -e ".[cognee]"`.
 
-**Trigger.dev — deploy the workflows** (so dispatch hits durable cloud runs instead of running inline):
-```bash
-cd trigger
-npm install
-npx trigger.dev@latest login        # one-time, opens a browser
-TRIGGER_PROJECT_REF=proj_xxx npx trigger.dev@latest deploy
-```
-The backend already dispatches to these tasks using `TRIGGER_SECRET_KEY`. Until deployed, workflows run **inline** in the backend (the product still works end-to-end).
+**Trigger.dev (v4) — already deployed** for this project (`proj_wedjfsjeupvwzsphqsfd`, baked into `trigger.config.ts`); 5 tasks live. The backend dispatches via `TRIGGER_SECRET_KEY` (verified live). Two ways to run the workflows:
+- **Dev (local worker):** `WITH_TRIGGER=1 ./start.sh` runs `trigger dev`; the `tr_dev_…` key dispatches to it (runs visible in the dashboard's dev env).
+- **Prod (no worker):** set `TRIGGER_SECRET_KEY` to a **production** key (`tr_prod_…`) and dispatches hit the deployed tasks directly.
+
+Re-deploy after changes: `cd trigger && npx trigger.dev@latest deploy`. Without any key, workflows run **inline** in the backend (still fully functional).
 
 ---
 

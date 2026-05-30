@@ -12,31 +12,46 @@ inline (mock mode) or via Trigger.dev (live).
 | `sequence-run`     | Event (per sequence)   | Durable multi-day sequence with `wait.for` between steps + branching |
 | `call-completed`   | Event (per call)       | Transcribe → summarize → scorecard → follow-up email → next task     |
 
+Uses **Trigger.dev v4**. The project ref is baked into `trigger.config.ts`
+(`proj_wedjfsjeupvwzsphqsfd`) and is overridable via `TRIGGER_PROJECT_REF`.
+
 ## Setup
 
 ```bash
 cd trigger
 npm install
-# Log in + select your project (creates/links proj ref)
-npx trigger.dev@latest login
-npx trigger.dev@latest dev      # local dev — runs tasks against your backend
+npx trigger.dev@latest login    # one-time browser login
 ```
 
-Set these env vars (see root `.env.example`):
+Env (the tasks call back into the backend):
 
 ```
-TRIGGER_PROJECT_REF=proj_xxx
-TRIGGER_SECRET_KEY=tr_dev_xxx
-BACKEND_URL=http://localhost:8000        # where these tasks call back to
+BACKEND_URL=http://localhost:8000
 REVENUEOS_TEAM_ID=00000000-0000-0000-0000-0000000000aa
 ```
 
-## Deploy
+## Run locally (dev environment)
 
 ```bash
-npx trigger.dev@latest deploy
+npx trigger.dev@latest dev      # registers tasks + runs them on a local worker
 ```
 
-When `TRIGGER_ACCESS_TOKEN` / `TRIGGER_SECRET_KEY` is set on the **backend**, the
-backend dispatches these tasks (e.g. launching a sequence triggers `sequence-run`).
-Without it, the backend runs the equivalent logic inline so the demo still works.
+With the backend's `TRIGGER_SECRET_KEY=tr_dev_…`, dispatches go to the **dev**
+environment and execute on this worker — visible live in the dashboard.
+`WITH_TRIGGER=1 ./start.sh` (repo root) starts this alongside the app.
+
+## Deploy (production)
+
+```bash
+npx trigger.dev@latest deploy   # → "Version … deployed with 5 detected tasks"
+```
+
+Already deployed for this project. To dispatch to the **deployed prod** tasks (no
+local worker needed), set the backend's `TRIGGER_SECRET_KEY` to a **production**
+key (`tr_prod_…`, from dashboard → Project → API Keys → Production).
+
+## How dispatch works
+
+The backend dispatches via the REST API (`POST /api/v1/tasks/{id}/trigger`) using
+`TRIGGER_SECRET_KEY` — verified live (`mock: false`, real `run_…` handle). Without
+a key set, the backend runs the equivalent logic inline so the product still works.

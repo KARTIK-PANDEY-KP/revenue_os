@@ -1,4 +1,4 @@
-import { logger, task, wait } from "@trigger.dev/sdk/v3";
+import { logger, task, wait } from "@trigger.dev/sdk";
 import { backend } from "../lib/backend.js";
 
 /**

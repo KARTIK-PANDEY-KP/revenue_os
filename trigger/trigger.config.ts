@@ -1,4 +1,4 @@
-import { defineConfig } from "@trigger.dev/sdk/v3";
+import { defineConfig } from "@trigger.dev/sdk";
 
 /**
  * RevenueOS workflow engine.
@@ -8,7 +8,7 @@ import { defineConfig } from "@trigger.dev/sdk/v3";
  * ./src/trigger and call back into the FastAPI backend to do the heavy lifting.
  */
 export default defineConfig({
-  project: process.env.TRIGGER_PROJECT_REF ?? "proj_revenueos",
+  project: process.env.TRIGGER_PROJECT_REF ?? "proj_wedjfsjeupvwzsphqsfd",
   runtime: "node",
   logLevel: "info",
   maxDuration: 600,
