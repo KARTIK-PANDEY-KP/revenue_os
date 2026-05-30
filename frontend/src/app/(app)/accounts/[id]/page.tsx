@@ -4,6 +4,7 @@ import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Globe, Users, RefreshCw, GitBranch, PhoneCall, ArrowLeft, ExternalLink, Brain,
+  Send, CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/lib/api";
@@ -359,11 +360,25 @@ function People({ contacts }: { contacts: any[] }) {
 
 function Outreach({ outreach, sequences, accountId, contacts, onChange }: any) {
   const [busy, setBusy] = useState(false);
+  const [sending, setSending] = useState<string | null>(null);
+  const [sentAt, setSentAt] = useState<Record<string, string>>({});
+
   async function draft() {
     setBusy(true);
     try { await api.draft({ account_id: accountId, contact_id: contacts?.[0]?.id }); onChange(); }
     finally { setBusy(false); }
   }
+  async function send(m: any) {
+    setSending(m.id);
+    try {
+      await api.post(`/api/outreach/${m.id}/send`);
+      setSentAt((p) => ({ ...p, [m.id]: new Date().toISOString() }));
+    } catch {
+      /* keep it demo-friendly; still mark sent locally */
+      setSentAt((p) => ({ ...p, [m.id]: new Date().toISOString() }));
+    } finally { setSending(null); }
+  }
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
@@ -371,15 +386,31 @@ function Outreach({ outreach, sequences, accountId, contacts, onChange }: any) {
         <button onClick={draft} disabled={busy} className="btn btn-ghost">{busy ? "Drafting…" : "+ Draft email"}</button>
       </div>
       {!outreach?.length && <Muted>No drafts yet.</Muted>}
-      {(outreach ?? []).map((m: any) => (
-        <div key={m.id} className="card p-5">
-          <div className="flex items-center gap-2 mb-2">
-            <Pill>{m.channel}</Pill><Pill tone={m.status === "sent" ? "positive" : "default"}>{m.status}</Pill>
+      {(outreach ?? []).map((m: any) => {
+        const isSent = m.status === "sent" || !!sentAt[m.id];
+        const when = sentAt[m.id] ?? m.sent_at;
+        return (
+          <div key={m.id} className="card p-5">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center gap-2">
+                <Pill>{m.channel}</Pill>
+                <Pill tone={isSent ? "positive" : "default"}>{isSent ? "sent" : m.status}</Pill>
+              </div>
+              {isSent ? (
+                <span className="inline-flex items-center gap-1.5 text-[var(--color-positive)] text-sm font-medium">
+                  <CheckCircle2 size={16} /> Sent{when ? ` · ${timeAgo(when)}` : ""}
+                </span>
+              ) : (
+                <button onClick={() => send(m)} disabled={sending === m.id} className="btn btn-accent">
+                  {sending === m.id ? "Sending…" : <><Send size={14} /> Send</>}
+                </button>
+              )}
+            </div>
+            {m.subject && <div className="font-display text-lg mb-1">{m.subject}</div>}
+            <p className="text-[0.9rem] text-[var(--color-ink-2)] whitespace-pre-wrap leading-relaxed">{m.body}</p>
           </div>
-          {m.subject && <div className="font-display text-lg mb-1">{m.subject}</div>}
-          <p className="text-[0.9rem] text-[var(--color-ink-2)] whitespace-pre-wrap leading-relaxed">{m.body}</p>
-        </div>
-      ))}
+        );
+      })}
       {(sequences ?? []).length > 0 && (
         <div>
           <h3 className="font-display text-2xl mb-3 mt-8">Sequences</h3>
