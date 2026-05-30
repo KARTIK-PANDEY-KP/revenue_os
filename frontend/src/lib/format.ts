@@ -49,3 +49,14 @@ export function titleCase(s?: string): string {
   if (!s) return "";
   return s.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+/** Render an E.164-ish US number (e.g. +14155550142) as +1 (415) 555-0142. */
+export function formatPhone(raw?: string | null): string {
+  if (!raw) return "";
+  const digits = raw.replace(/[^\d]/g, "");
+  const ten = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (ten.length === 10) {
+    return `+1 (${ten.slice(0, 3)}) ${ten.slice(3, 6)}-${ten.slice(6)}`;
+  }
+  return raw; // non-US / unexpected shape — show as given
+}

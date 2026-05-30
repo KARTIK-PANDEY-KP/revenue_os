@@ -18,23 +18,28 @@ from app.core.logging import get_logger
 
 log = get_logger("speechmatics")
 
-# A scripted demo call (rep <-> prospect) used in mock mode. Includes the
-# objection phrases the copilot reacts to ("too expensive", "we use Apollo").
+# A scripted demo call used in mock mode. The "rep" turns are spoken by the
+# RevenueOS AI voice agent (the UI relabels this as "AI agent"; the label stays
+# "rep" so talk-ratio / scorecard logic keeps working). Includes the objection
+# phrases the copilot reacts to ("too expensive", "we use Apollo").
 MOCK_SCRIPT: list[dict[str, Any]] = [
-    {"speaker": "rep", "text": "Hi Jordan, this is Kartik from RevenueOS — catch you at a bad time?", "ms": 0},
+    {"speaker": "rep", "text": "Hi Jordan — this is the RevenueOS AI assistant calling on behalf of "
+                               "the sales team. Is now an okay moment for a quick minute?", "ms": 0},
     {"speaker": "prospect", "text": "I've got a couple minutes, go ahead.", "ms": 3200},
-    {"speaker": "rep", "text": "Appreciate it. I saw Cursor's been hiring a lot of enterprise reps "
-                               "lately — figured account prioritization might be top of mind.", "ms": 6000},
+    {"speaker": "rep", "text": "Thanks. I noticed Cursor has been hiring a lot of enterprise reps "
+                               "lately, so I figured account prioritization might be top of mind right now.", "ms": 6000},
     {"speaker": "prospect", "text": "Yeah, we're ramping the team. Honestly though, this sounds a "
                                     "bit too expensive for where we are.", "ms": 12000},
-    {"speaker": "rep", "text": "Totally fair to ask about cost.", "ms": 17000},
+    {"speaker": "rep", "text": "That's a fair concern about cost — let me put it in context for you.", "ms": 17000},
     {"speaker": "prospect", "text": "And we already use Apollo for a lot of this.", "ms": 20000},
-    {"speaker": "rep", "text": "Makes sense — a lot of teams start there.", "ms": 24000},
+    {"speaker": "rep", "text": "Makes sense — a lot of teams start with Apollo, and we sit alongside it.", "ms": 24000},
     {"speaker": "prospect", "text": "What would make this different for us?", "ms": 27000},
-    {"speaker": "rep", "text": "Great question. The short version: we surface live buying signals "
-                               "and rank who to call today, so your new reps don't waste ramp time.", "ms": 30000},
+    {"speaker": "rep", "text": "Great question. The short version: I surface live buying signals and "
+                               "rank exactly who your reps should call today, so new hires don't burn ramp time.", "ms": 30000},
     {"speaker": "prospect", "text": "Okay, that's interesting. Send me something and let's find time "
                                     "next week.", "ms": 36000},
+    {"speaker": "rep", "text": "Perfect — I'll email you a short brief and a few times for next week, "
+                               "and I'll note that pricing and the Apollo overlap came up. Thanks, Jordan.", "ms": 40000},
 ]
 
 

@@ -73,16 +73,19 @@ def build_seed() -> dict[str, list[dict]]:
         _contact("00000000-0000-0000-0000-0000000d0001", "00000000-0000-0000-0000-0000000c0001",
                  "Jordan Mehta", "VP of Sales", "vp", "Sales", "jordan@cursor.com",
                  "Saw Cursor is scaling enterprise sales fast — how are you prioritizing which "
-                 "accounts get rep time?", 92),
+                 "accounts get rep time?", 92, phone="+14155550142"),
         _contact("00000000-0000-0000-0000-0000000d0002", "00000000-0000-0000-0000-0000000c0001",
                  "Priya Nair", "Head of RevOps", "director", "RevOps", "priya@cursor.com",
-                 "With 12 new reps ramping, the prioritization bottleneck usually hits RevOps first.", 86),
+                 "With 12 new reps ramping, the prioritization bottleneck usually hits RevOps first.", 86,
+                 phone="+14155550178"),
         _contact("00000000-0000-0000-0000-0000000d0003", "00000000-0000-0000-0000-0000000c0002",
                  "Sam Coleman", "RevOps Lead", "manager", "RevOps", "sam@anthropic.com",
-                 "Congrats on the enterprise launch — curious how you're routing inbound to the right reps.", 84),
+                 "Congrats on the enterprise launch — curious how you're routing inbound to the right reps.", 84,
+                 phone="+12025550133"),
         _contact("00000000-0000-0000-0000-0000000d0004", "00000000-0000-0000-0000-0000000c0003",
                  "Alex Romero", "CRO", "c_level", "Sales", "alex@databricks.com",
-                 "New AI launch + hiring usually means rep capacity is the constraint — worth a chat?", 88),
+                 "New AI launch + hiring usually means rep capacity is the constraint — worth a chat?", 88,
+                 phone="+16505550199"),
     ]
 
     signals = [
@@ -224,10 +227,10 @@ def _acct(id_, name, domain, industry, desc, emp, stage, overall, fit, intent, t
     }
 
 
-def _contact(id_, acct, name, title, sen, dept, email, opener, conf):
+def _contact(id_, acct, name, title, sen, dept, email, opener, conf, phone=None):
     return {
         "id": id_, "team_id": TEAM, "account_id": acct, "full_name": name, "title": title,
-        "seniority": sen, "department": dept, "email": email, "phone": None,
+        "seniority": sen, "department": dept, "email": email, "phone": phone,
         "linkedin_url": f"https://linkedin.com/in/{name.lower().replace(' ', '')}",
         "location": "San Francisco, CA", "is_decision_maker": True,
         "suggested_opener": opener, "confidence": conf, "enrichment": {},

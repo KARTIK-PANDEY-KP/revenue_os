@@ -10,6 +10,7 @@ The memory layer stores company/contact/signal/call/email context and answers
 """
 from __future__ import annotations
 
+import asyncio
 from typing import Any
 
 import httpx
@@ -18,6 +19,11 @@ from app.core.config import settings
 from app.core.logging import get_logger
 
 log = get_logger("cognee")
+
+# Cognee's local (LadybugDB) engine is single-writer; serialize all native ops
+# through this lock so concurrent requests/background tasks queue instead of
+# colliding on the on-disk lock file.
+_NATIVE_LOCK = asyncio.Lock()
 
 
 class _MemoryGraph:
@@ -96,8 +102,11 @@ class CogneeClient:
         """Persist a memory and (in real mode) cognify it into the graph."""
         if self._mode == "native":
             try:
-                await self._native.add(text, dataset_name=dataset)
-                await self._native.cognify(datasets=[dataset])
+                # Cognee's local engine is single-writer — serialize all native
+                # ops so concurrent research/drafting don't collide on its file lock.
+                async with _NATIVE_LOCK:
+                    await self._native.add(text, dataset_name=dataset)
+                    await self._native.cognify(datasets=[dataset])
                 return True
             except Exception as exc:  # pragma: no cover
                 log.error("cognee native add failed: %s", exc)
@@ -127,7 +136,8 @@ class CogneeClient:
                 from cognee.api.v1.search import SearchType  # type: ignore
 
                 # GRAPH_COMPLETION returns a graph-grounded natural-language answer.
-                res = await self._native.search(query_type=SearchType.GRAPH_COMPLETION, query_text=query)
+                async with _NATIVE_LOCK:
+                    res = await self._native.search(query_type=SearchType.GRAPH_COMPLETION, query_text=query)
                 items = res if isinstance(res, list) else [res]
                 out: list[dict[str, Any]] = []
                 for r in items:

@@ -137,7 +137,58 @@ class SequenceService:
             "trigger_task": "sequence-run", "payload": {"sequence_id": sequence_id},
             "started_at": now_iso(),
         }).execute()
-        return {"sequence_id": sequence_id, "run": run, "status": "active"}
+
+        # INSTANT (no LLM): schedule every step with its real send-date and create
+        # the call / follow-up tasks — so "active" is immediately tangible.
+        from datetime import datetime, timedelta, timezone
+
+        steps = (await db.table("sequence_steps").select("*").eq("sequence_id", sequence_id)
+                 .order("step_order").execute()).data or []
+        start = datetime.now(timezone.utc)
+        for s in steps:
+            sched = (start + timedelta(days=int(s.get("day_offset") or 0))).isoformat()
+            await db.table("sequence_steps").update(
+                {"status": "scheduled", "scheduled_at": sched}).eq("id", s["id"]).execute()
+            if s["channel"] in ("call", "task"):
+                await db.table("tasks").insert({
+                    "team_id": sequence["team_id"], "account_id": sequence.get("account_id"),
+                    "contact_id": sequence.get("contact_id"), "sequence_id": sequence_id,
+                    "kind": "call" if s["channel"] == "call" else "followup",
+                    "status": "open", "priority": 2,
+                    "title": f"{('Call' if s['channel']=='call' else 'Step')} · {sequence.get('name','sequence')} (day {s.get('day_offset',0)})",
+                    "detail": s.get("instruction"), "due_at": sched,
+                }).execute()
+
+        # BACKGROUND (LLM): draft the actual email / LinkedIn message bodies; the
+        # scheduled state above is already visible while these fill in.
+        from app.core.tasks import spawn
+
+        spawn(self._draft_messages(sequence_id), name=f"seq-draft:{sequence_id}")
+        return {"sequence_id": sequence_id, "run": run, "status": "active",
+                "scheduled_steps": len(steps)}
+
+    async def _draft_messages(self, sequence_id: str) -> None:
+        """Fill in message bodies for the messaging steps of an active sequence."""
+        db = get_db()
+        seq = (await db.table("sequences").select("*").eq("id", sequence_id).limit(1).execute()).data
+        if not seq:
+            return
+        sequence = seq[0]
+        steps = (await db.table("sequence_steps").select("*").eq("sequence_id", sequence_id)
+                 .order("step_order").execute()).data or []
+        for s in steps:
+            if s["channel"] not in ("email", "linkedin", "sms"):
+                continue
+            if (s.get("content") or {}).get("body"):
+                continue  # already drafted (e.g. the first email at creation)
+            msg = await outreach_service.draft(
+                sequence["team_id"], sequence["account_id"], contact_id=sequence.get("contact_id"),
+                channel=s["channel"], tone=sequence.get("tone", "consultative"),
+                sequence_id=sequence_id, step_id=s["id"],
+            )
+            await db.table("sequence_steps").update(
+                {"content": {"subject": msg.get("subject"), "body": msg.get("body"),
+                             "message_id": msg.get("id")}}).eq("id", s["id"]).execute()
 
 
 sequence_service = SequenceService()
