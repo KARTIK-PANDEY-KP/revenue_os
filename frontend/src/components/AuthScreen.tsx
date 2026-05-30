@@ -119,58 +119,60 @@ export function AuthScreen({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative z-10 min-h-screen grid lg:grid-cols-[1.05fr_0.95fr]">
-      {/* Brand panel */}
-      <div className="relative hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-hidden">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-24 -left-16 h-96 w-96 rounded-full blur-3xl"
-          style={{ background: "radial-gradient(closest-side, rgba(229,67,15,0.20), transparent 70%)" }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-32 right-0 h-[26rem] w-[26rem] rounded-full blur-3xl"
-          style={{ background: "radial-gradient(closest-side, rgba(31,93,63,0.14), transparent 70%)" }}
-        />
+    <div className="relative z-10 min-h-screen grid place-items-center p-6 sm:p-10 overflow-hidden">
+      {/* Ambient glows (anchored to the viewport, behind the centered block) */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed -top-24 -left-20 h-96 w-96 rounded-full blur-3xl"
+        style={{ background: "radial-gradient(closest-side, rgba(229,67,15,0.18), transparent 70%)" }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed -bottom-32 -right-16 h-[26rem] w-[26rem] rounded-full blur-3xl"
+        style={{ background: "radial-gradient(closest-side, rgba(31,93,63,0.12), transparent 70%)" }}
+      />
 
-        <div className="relative flex items-center justify-between">
-          <Link href="/" className="font-display text-3xl tracking-tight">
-            Revenue<span className="text-[var(--color-accent)]">OS</span>
-          </Link>
-          <span className="pill">AI-native GTM</span>
-        </div>
+      {/* Centered, width-gated two-column block — keeps brand + form together
+          instead of letting them stretch to opposite edges on wide screens. */}
+      <div className="relative w-full max-w-5xl grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        {/* Brand panel */}
+        <div className="hidden lg:flex flex-col gap-9">
+          <div className="flex items-center gap-3">
+            <Link href="/" className="font-display text-3xl tracking-tight">
+              Revenue<span className="text-[var(--color-accent)]">OS</span>
+            </Link>
+            <span className="pill">AI-native GTM</span>
+          </div>
 
-        <div className="relative max-w-md">
-          <p className="font-display text-[2.6rem] leading-[1.05] tracking-tight">{brandLine}</p>
-          <p className="mt-5 text-[var(--color-ink-soft)]">
-            The system that listens to the buying signals companies are already broadcasting — so your
-            team can spend its time closing, not digging.
-          </p>
-          <div className="mt-7">
-            <SignalFeed />
+          <div>
+            <p className="font-display text-[2.6rem] leading-[1.05] tracking-tight">{brandLine}</p>
+            <p className="mt-5 text-[var(--color-ink-soft)] max-w-md">
+              The system that listens to the buying signals companies are already broadcasting — so your
+              team can spend its time closing, not digging.
+            </p>
+          </div>
+
+          <SignalFeed />
+
+          <div className="space-y-5">
+            <div className="grid grid-cols-3 gap-3 max-w-md">
+              {STATS.map((s) => (
+                <div key={s.label}>
+                  <div className="numeral text-3xl">{s.value}</div>
+                  <div className="kicker mt-1">{s.label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2.5 text-[var(--color-faint)] text-[0.78rem] font-mono">
+              <ShieldCheck size={14} />
+              <span>SOC 2 Type II · Bank-grade encryption · GDPR-ready</span>
+            </div>
           </div>
         </div>
 
-        <div className="relative space-y-6">
-          <div className="grid grid-cols-3 gap-3 max-w-md">
-            {STATS.map((s) => (
-              <div key={s.label}>
-                <div className="numeral text-3xl">{s.value}</div>
-                <div className="kicker mt-1">{s.label}</div>
-              </div>
-            ))}
-          </div>
-          <div className="flex items-center gap-2.5 text-[var(--color-faint)] text-[0.78rem] font-mono">
-            <ShieldCheck size={14} />
-            <span>SOC 2 Type II · Bank-grade encryption · GDPR-ready</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Form card */}
-      <div className="grid place-items-center p-6 sm:p-10">
+        {/* Form card */}
         <div
-          className="w-full max-w-md glass-strong rounded-[var(--radius-lg)] p-8 sm:p-10 reveal"
+          className="w-full max-w-md lg:justify-self-end glass-strong rounded-[var(--radius-lg)] p-8 sm:p-10 reveal"
           style={{ boxShadow: "var(--glass-shadow-hover)" }}
         >
           <div className="lg:hidden font-display text-3xl mb-8">

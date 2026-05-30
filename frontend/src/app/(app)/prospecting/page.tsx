@@ -34,15 +34,19 @@ export default function ProspectingPage() {
   const doneRef = useRef(0);
   const totalRef = useRef(1);
 
-  // Smoothly creep the bar forward between real events so it never looks frozen.
+  // Keep the bar always moving, but decelerate: fast at first, slower as it
+  // climbs, asymptotically approaching ~96% while we wait — and jumping forward
+  // (via the done/total floor) each time a company finishes. Never parks.
   useEffect(() => {
     if (phase !== "running") return;
     const t = setInterval(() => {
       setPct((p) => {
-        const ceil = Math.min(98, ((doneRef.current + 0.92) / totalRef.current) * 100);
-        return p < ceil ? Math.min(p + 1.2, ceil) : p;
+        const floor = (doneRef.current / totalRef.current) * 100;   // real completion
+        const eased = p + (96 - p) * 0.05;                          // ease-out toward 96
+        const moved = Math.max(eased, p + 0.15);                    // guaranteed crawl
+        return Math.min(96, Math.max(floor, moved));
       });
-    }, 350);
+    }, 300);
     return () => clearInterval(t);
   }, [phase]);
 
