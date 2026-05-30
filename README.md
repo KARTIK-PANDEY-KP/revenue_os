@@ -67,24 +67,30 @@ revenue_os/
 └── scripts/      dev runner
 ```
 
-## Quickstart
+## Quickstart — one command
 
 ```bash
-# 0. Configure providers (see "the keys I need" below)
-cp .env.example .env                   # fill in the keys you have
-cp frontend/.env.local.example frontend/.env.local
-
-# 1. Backend (Python 3.12)
-cd backend
-uv venv --python 3.12 .venv && source .venv/bin/activate
-uv pip install -e ".[dev]"
-uvicorn app.main:app --reload          # → http://localhost:8000
-
-# 2. Frontend (new terminal)
-cd frontend && npm install && npm run dev   # → http://localhost:3000
+cp .env.example backend/.env           # add your provider keys
+./start.sh                             # installs anything missing, runs backend + frontend
 ```
 
-…or from the repo root: **`make setup && make dev`** runs both.
+`./start.sh` creates the Python venv + installs backend deps, installs frontend deps,
+copies env templates if needed, then starts **both** servers (Ctrl-C stops everything).
+Open **http://localhost:3000**. Options: `WITH_TRIGGER=1 ./start.sh` also starts the
+Trigger.dev dev server; `BACKEND_PORT=… FRONTEND_PORT=… ./start.sh` overrides ports.
+
+<details><summary>Manual (two terminals)</summary>
+
+```bash
+# Backend (Python 3.12)
+cd backend && uv venv --python 3.12 .venv && source .venv/bin/activate
+uv pip install -e ".[dev]" && uvicorn app.main:app --reload   # :8000
+
+# Frontend
+cd frontend && npm install && npm run dev                      # :3000
+```
+…or `make setup && make dev`.
+</details>
 
 With keys set + Supabase migrated, open **http://localhost:3000** and the product runs on
 **live data**: research a real company (Bright Data), watch signals + scoring populate,
